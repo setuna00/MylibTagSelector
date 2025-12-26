@@ -58,6 +58,17 @@ export interface TagNode {
 
   /** Extension metadata */
   meta?: Record<string, unknown>;
+
+  /**
+   * Additional data fields (preserved from JSON import).
+   * - recommendedTagIds: Array of tag IDs (only for tag nodes, not folders)
+   */
+  data?: {
+    /** Recommended tag IDs (only for tag nodes, not folders) */
+    recommendedTagIds?: string[];
+    /** Other data fields (e.g., color, displayName, aliases) */
+    [key: string]: unknown;
+  };
 }
 
 /**
@@ -72,5 +83,33 @@ export function shouldExport(node: TagNode): boolean {
     return node.export;
   }
   return node.kind === 'tag';
+}
+
+/**
+ * Get recommended tag IDs from a node.
+ * 
+ * Returns an empty array if:
+ * - node is not a tag (kind !== 'tag')
+ * - node.data is missing
+ * - node.data.recommendedTagIds is missing or invalid
+ * 
+ * @param node - The node to read from
+ * @returns Array of recommended tag IDs (always an array, never undefined)
+ */
+export function getRecommendedTagIds(node: TagNode): string[] {
+  // Only tag nodes have recommendedTagIds
+  if (node.kind !== 'tag') {
+    return [];
+  }
+
+  const recommendedTagIds = node.data?.recommendedTagIds;
+  
+  // Return empty array if missing or not an array
+  if (!Array.isArray(recommendedTagIds)) {
+    return [];
+  }
+
+  // Filter to ensure all items are strings
+  return recommendedTagIds.filter((id): id is string => typeof id === 'string');
 }
 

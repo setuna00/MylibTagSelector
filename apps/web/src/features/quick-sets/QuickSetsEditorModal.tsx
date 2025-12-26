@@ -43,7 +43,7 @@ import {
 import type { NodeId, TaxonomyIndex, Taxonomy } from '@tagselector/tag-core';
 import type { QuickTree, QuickTreeNode } from '../../types/project-pack';
 import { injectExtensions } from '../../utils/extensions';
-import { useTaxonomyStore } from '../../store';
+import { useTaxonomyStore, useSettingsStore } from '../../store';
 
 interface QuickSetsEditorModalProps {
   opened: boolean;
@@ -72,6 +72,7 @@ export function QuickSetsEditorModal({
   selectedIds,
 }: QuickSetsEditorModalProps) {
   const { setTaxonomy } = useTaxonomyStore();
+  const { uiLanguage } = useSettingsStore();
 
   // Draft state - deep copy of quickTrees
   const [draftTrees, setDraftTrees] = useState<QuickTree[]>(() =>
@@ -316,7 +317,9 @@ export function QuickSetsEditorModal({
             </ActionIcon>
           )}
           <Text fw={600}>
-            {selectedTree ? `编辑: ${selectedTree.name}` : '快捷分类编辑器'}
+            {selectedTree 
+              ? (uiLanguage === 'zh' ? `编辑: ${selectedTree.name}` : `Edit: ${selectedTree.name}`)
+              : (uiLanguage === 'zh' ? '快捷分类编辑器' : 'Quick Category Editor')}
           </Text>
         </Group>
       }
@@ -332,7 +335,7 @@ export function QuickSetsEditorModal({
             {/* Create new QuickSet */}
             <Group gap="xs">
               <TextInput
-                placeholder="新建快捷分类..."
+                placeholder={uiLanguage === 'zh' ? '新建快捷分类...' : 'New quick category...'}
                 value={newSetName}
                 onChange={(e) => setNewSetName(e.currentTarget.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleCreateSet()}
@@ -345,7 +348,7 @@ export function QuickSetsEditorModal({
                 onClick={handleCreateSet}
                 disabled={!newSetName.trim()}
               >
-                创建
+                {uiLanguage === 'zh' ? '创建' : 'Create'}
               </Button>
             </Group>
 
@@ -356,7 +359,7 @@ export function QuickSetsEditorModal({
               <Stack gap="xs">
                 {draftTrees.length === 0 ? (
                   <Text size="sm" c="dimmed" ta="center" py="md">
-                    暂无快捷分类，请创建一个
+                    {uiLanguage === 'zh' ? '暂无快捷分类，请创建一个' : 'No quick categories, please create one'}
                   </Text>
                 ) : (
                   draftTrees.map((tree) => (
@@ -406,7 +409,7 @@ export function QuickSetsEditorModal({
                               {tree.name}
                             </Text>
                             <Badge size="xs" variant="light" color="gray">
-                              {tree.roots.length} 项
+                              {uiLanguage === 'zh' ? `${tree.roots.length} 项` : `${tree.roots.length} items`}
                             </Badge>
                             <ActionIcon
                               size="sm"
@@ -446,7 +449,7 @@ export function QuickSetsEditorModal({
                 onClick={handleAddCurrentFolder}
                 disabled={!currentFolderId}
               >
-                添加当前文件夹
+                {uiLanguage === 'zh' ? '添加当前文件夹' : 'Add Current Folder'}
               </Button>
               <Button
                 size="sm"
@@ -455,7 +458,9 @@ export function QuickSetsEditorModal({
                 onClick={handleAddSelectedTags}
                 disabled={selectedTagIds.length === 0}
               >
-                添加已选标签 ({selectedTagIds.length})
+                {uiLanguage === 'zh' 
+                  ? `添加已选标签 (${selectedTagIds.length})`
+                  : `Add Selected Tags (${selectedTagIds.length})`}
               </Button>
             </Group>
 
@@ -466,7 +471,7 @@ export function QuickSetsEditorModal({
               <Stack gap="xs">
                 {selectedTree.roots.length === 0 ? (
                   <Text size="sm" c="dimmed" ta="center" py="md">
-                    暂无条目，请添加文件夹或标签
+                    {uiLanguage === 'zh' ? '暂无条目，请添加文件夹或标签' : 'No items, please add folders or tags'}
                   </Text>
                 ) : (
                   selectedTree.roots.map((node, idx) => renderRefNode(node, idx))
@@ -481,9 +486,11 @@ export function QuickSetsEditorModal({
         {/* Save / Cancel */}
         <Group justify="flex-end" gap="sm">
           <Button variant="subtle" onClick={handleCancel}>
-            取消
+            {uiLanguage === 'zh' ? '取消' : 'Cancel'}
           </Button>
-          <Button onClick={handleSave}>保存</Button>
+          <Button onClick={handleSave}>
+            {uiLanguage === 'zh' ? '保存' : 'Save'}
+          </Button>
         </Group>
       </Stack>
     </Modal>

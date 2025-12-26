@@ -15,7 +15,7 @@ export type {
   TaxonomyIndex,
 } from './models/index.js';
 
-export { shouldExport, SCHEMA_VERSION } from './models/index.js';
+export { shouldExport, getRecommendedTagIds, SCHEMA_VERSION } from './models/index.js';
 
 // Operations
 export { compareNodes, compareStringsUTF16 } from './ops/compare.js';

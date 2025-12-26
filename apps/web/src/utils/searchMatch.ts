@@ -1,7 +1,7 @@
 /**
  * TagSelector - Search Match Utilities
  * 
- * Tools for matching nodes by label or aliases (case-insensitive).
+ * Tools for matching nodes by label, displayName, or aliases (case-insensitive).
  */
 
 import type { TagNode } from '@tagselector/tag-core';
@@ -30,11 +30,48 @@ export function getAliases(node: any): string[] {
 }
 
 /**
+ * Get displayName from a node.
+ * 
+ * Reads from node.data?.displayName.
+ * 
+ * @param node - The node (may be TagNode or wrapped with data field)
+ * @returns displayName string or undefined
+ */
+export function getDisplayName(node: any): string | undefined {
+  const nodeWithData = node as TagNode & { data?: { displayName?: string } };
+  const displayName = nodeWithData.data?.displayName;
+  if (typeof displayName === 'string' && displayName.trim().length > 0) {
+    return displayName.trim();
+  }
+  return undefined;
+}
+
+/**
+ * Get display label for a tag node (for UI display, not export).
+ * 
+ * Uses displayName if available, otherwise falls back to label.
+ * This should be used everywhere in the UI except for export preview.
+ * 
+ * @param node - The node (may be TagNode or wrapped with data field)
+ * @returns Display label string
+ */
+export function getTagDisplayLabel(node: any): string {
+  const displayName = getDisplayName(node);
+  if (displayName) {
+    return displayName;
+  }
+  // Fallback to label
+  const label = (node as any).data?.label ?? (node as TagNode).label;
+  return typeof label === 'string' ? label : '';
+}
+
+/**
  * Check if a node matches the query (case-insensitive).
  * 
- * Matches if either:
- * - node.label contains query (case-insensitive)
- * - any alias contains query (case-insensitive)
+ * Matches if any of the following contains the query:
+ * - node.label
+ * - node.data.displayName (if present)
+ * - node.data.aliases (if present)
  * 
  * @param node - The node (may be TagNode or wrapped with data field)
  * @param query - Search query string
@@ -58,10 +95,14 @@ export function nodeMatchesQuery(node: any, query: string): boolean {
   // Check label match
   const labelMatch = label.toLowerCase().includes(q);
   
+  // Check displayName match
+  const displayName = getDisplayName(node);
+  const displayNameMatch = displayName ? displayName.toLowerCase().includes(q) : false;
+  
   // Check aliases match
   const aliases = getAliases(node);
   const aliasMatch = aliases.some(a => a.toLowerCase().includes(q));
   
-  return labelMatch || aliasMatch;
+  return labelMatch || displayNameMatch || aliasMatch;
 }
 

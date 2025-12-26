@@ -11,4 +11,5 @@ export {
   type RuleValidationError,
   type RuleValidationWarning,
 } from './rulesStore';
+export { useSettingsStore, type UILanguage, type ExportLabelMode } from './settingsStore';
 

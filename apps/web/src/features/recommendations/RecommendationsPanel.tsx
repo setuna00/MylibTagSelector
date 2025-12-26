@@ -20,6 +20,8 @@ import { Badge, Text, Group } from '@mantine/core';
 import { Sparkles, Tag } from 'lucide-react';
 import type { NodeId, TaxonomyIndex, TagNode } from '@tagselector/tag-core';
 import type { RecommendationsConfig } from '../../types/project-pack';
+import { getTagDisplayLabel } from '../../utils/searchMatch';
+import { useSettingsStore } from '../../store';
 import styles from './RecommendationsPanel.module.css';
 
 interface RecommendationsPanelProps {
@@ -69,6 +71,7 @@ export function RecommendationsPanel({
   selectedIds,
   onToggleTag,
 }: RecommendationsPanelProps) {
+  const { uiLanguage } = useSettingsStore();
   const recommendations = useMemo(() => {
     const limit = recommendationsConfig.limit ?? DEFAULT_LIMIT;
     const configMap = recommendationsConfig.map || {};
@@ -131,7 +134,7 @@ export function RecommendationsPanel({
       <Group gap="xs" align="center" wrap="nowrap" className={styles.barHeader}>
         <Sparkles size={14} className={styles.sparkleIcon} />
         <Text size="sm" fw={600}>
-          推荐
+          {uiLanguage === 'zh' ? '推荐' : 'Recommended'}
         </Text>
       </Group>
       <div className={styles.chipsRow}>
@@ -145,7 +148,7 @@ export function RecommendationsPanel({
             leftSection={<Tag size={16} />}
             onClick={() => onToggleTag(tag.id)}
           >
-            {tag.label}
+            {getTagDisplayLabel(tag)}
           </Badge>
         ))}
       </div>

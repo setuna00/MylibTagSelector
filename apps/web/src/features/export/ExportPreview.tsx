@@ -1,13 +1,14 @@
 import { useMemo } from 'react';
-import { Button, Badge } from '@mantine/core';
+import { Button, Badge, SegmentedControl } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import type { NodeId, TaxonomyIndex } from '@tagselector/tag-core';
+import type { NodeId, TaxonomyIndex, TagNode } from '@tagselector/tag-core';
 import {
   computeExportSet,
   sortByUserOrder,
-  formatForMylio,
+  DEFAULT_SEPARATOR,
 } from '@tagselector/tag-core';
 import { useClipboard } from '../../hooks/useClipboard';
+import { useSettingsStore } from '../../store';
 import styles from './ExportPreview.module.css';
 
 interface ExportPreviewProps {
@@ -15,8 +16,22 @@ interface ExportPreviewProps {
   selectedIds: Set<NodeId>;
 }
 
+/**
+ * Get display label for a node based on export mode.
+ * Uses safe type casting to access node.data.displayName.
+ */
+function getDisplayLabel(node: TagNode, mode: 'primary' | 'display'): string {
+  if (mode === 'primary') {
+    return node.label;
+  }
+  // display mode: use displayName if available, fallback to label
+  const nodeWithData = node as TagNode & { data?: { displayName?: string } };
+  return nodeWithData.data?.displayName ?? node.label;
+}
+
 export function ExportPreview({ index, selectedIds }: ExportPreviewProps) {
   const { copy, isCopied } = useClipboard();
+  const { exportLabelMode, setExportLabelMode, uiLanguage } = useSettingsStore();
 
   const { outputText, closureNodes } = useMemo(() => {
     if (selectedIds.size === 0) {
@@ -28,7 +43,16 @@ export function ExportPreview({ index, selectedIds }: ExportPreviewProps) {
 
     const exportSet = computeExportSet(index, selectedIds);
     const sortedIds = sortByUserOrder(index, exportSet);
-    const outputText = formatForMylio(index, sortedIds);
+
+    // Format output based on exportLabelMode
+    const labels: string[] = [];
+    for (const nodeId of sortedIds) {
+      const node = index.byId.get(nodeId);
+      if (node) {
+        labels.push(getDisplayLabel(node, exportLabelMode));
+      }
+    }
+    const outputText = labels.join(DEFAULT_SEPARATOR);
 
     // Get closure nodes with info about whether they're auto-included
     const closureNodes = sortedIds.map((id) => {
@@ -38,12 +62,25 @@ export function ExportPreview({ index, selectedIds }: ExportPreviewProps) {
     });
 
     return { outputText, closureNodes };
-  }, [index, selectedIds]);
+  }, [index, selectedIds, exportLabelMode]);
+
+  // Internationalization strings
+  const i18n = {
+    empty: uiLanguage === 'zh' ? '(空)' : '(empty)',
+    output: uiLanguage === 'zh' ? '输出' : 'Output',
+    copy: uiLanguage === 'zh' ? '复制' : 'Copy',
+    copied: uiLanguage === 'zh' ? '已复制' : 'Copied',
+    copyFailed: uiLanguage === 'zh' ? '复制失败' : 'Copy failed',
+    selectTags: uiLanguage === 'zh' ? '选择标签以查看导出预览' : 'Select tags to view export preview',
+    tags: uiLanguage === 'zh' ? '个标签' : ' tags',
+    primary: uiLanguage === 'zh' ? '主名' : 'Primary',
+    display: uiLanguage === 'zh' ? '显示名' : 'Display',
+  };
 
   if (selectedIds.size === 0) {
     return (
       <div className={styles.empty}>
-        选择标签以查看导出预览
+        {i18n.selectTags}
       </div>
     );
   }
@@ -64,7 +101,7 @@ export function ExportPreview({ index, selectedIds }: ExportPreviewProps) {
                 fontStyle: isAutoIncluded ? 'italic' : 'normal',
               }}
             >
-              {node.label}
+              {getDisplayLabel(node, 'display')}
               {isAutoIncluded && ' ↑'}
             </Badge>
           ))}
@@ -75,7 +112,7 @@ export function ExportPreview({ index, selectedIds }: ExportPreviewProps) {
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
           <div className={styles.sectionTitle}>
-            输出 ({closureNodes.length} 个标签)
+            {i18n.output} ({closureNodes.length}{i18n.tags})
           </div>
           <Button
             variant="outline"
@@ -83,19 +120,31 @@ export function ExportPreview({ index, selectedIds }: ExportPreviewProps) {
             onClick={async () => {
               const res = await copy(outputText);
               if (res.ok) {
-                notifications.show({ message: '已复制到剪贴板', color: 'green', autoClose: 2000 });
+                notifications.show({ message: i18n.copied, color: 'green', autoClose: 2000 });
               } else {
-                notifications.show({ message: `复制失败: ${res.error ?? 'Unknown error'}`, color: 'red', autoClose: 4000 });
+                notifications.show({ message: `${i18n.copyFailed}: ${res.error ?? 'Unknown error'}`, color: 'red', autoClose: 4000 });
               }
             }}
             disabled={!outputText}
             className={styles.copyButton}
           >
-            {isCopied ? '已复制' : '复制'}
+            {isCopied ? i18n.copied : i18n.copy}
           </Button>
         </div>
+        {/* Label mode selector */}
+        <div style={{ marginBottom: '8px' }}>
+          <SegmentedControl
+            value={exportLabelMode}
+            onChange={(value) => setExportLabelMode(value as 'primary' | 'display')}
+            data={[
+              { label: i18n.primary, value: 'primary' },
+              { label: i18n.display, value: 'display' },
+            ]}
+            size="xs"
+          />
+        </div>
         <div className={styles.outputBox}>
-          <code>{outputText || '(empty)'}</code>
+          <code>{outputText || i18n.empty}</code>
         </div>
       </div>
     </div>

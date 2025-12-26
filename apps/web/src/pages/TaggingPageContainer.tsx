@@ -27,14 +27,16 @@
  */
 
 import { useEffect, useRef, useState, useCallback, useMemo, useLayoutEffect } from 'react';
-import { AppShell, Button, Group, Stack } from '@mantine/core';
+import { AppShell, Button, Group, Stack, Alert } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import type { NodeId } from '@tagselector/tag-core';
+import type { NodeId, Taxonomy } from '@tagselector/tag-core';
+import { SCHEMA_VERSION } from '@tagselector/tag-core';
 import {
   useTaxonomyStore,
   useSelectionStore,
   useRulesStore,
+  useSettingsStore,
   computeRequiredTags,
   computeExcludedTags,
 } from '../store';
@@ -43,13 +45,13 @@ import { ExportPreview } from '../features/export';
 import { SearchBar, SearchResultsPanel } from '../features/search';
 import { SelectionChips } from '../features/selection';
 import { QuickSetsPanel, QuickSetBuilder, useQuickSetEditSession } from '../features/quick-sets';
-import { CurrentLevelView, CurrentFolderHeader } from '../features/current-level';
+import { CurrentLevelView, CurrentFolderHeader, TagEditDrawer } from '../features/current-level';
 import { RecommendationsPanel } from '../features/recommendations';
 import { RulesPanel, RulesToggleButton } from '../features/rules';
 import { loadSampleTaxonomy } from '../data/loadSample';
 import { useFileOperations } from '../hooks/useFileOperations';
 import { AppShellLayout } from '../layout/AppShellLayout';
-import { ValidationErrorBar } from '../shared/components';
+import { ValidationErrorBar, LanguageToggle, CreateNodeButtons } from '../shared/components';
 import { getExtensions } from '../utils/extensions';
 
 export function TaggingPageContainer() {
@@ -58,8 +60,11 @@ export function TaggingPageContainer() {
     index,
     validationErrors,
     setTaxonomy,
+    clearTaxonomy,
     clearValidationErrors,
+    createNode,
   } = useTaxonomyStore();
+  const { uiLanguage, isEditing } = useSettingsStore();
   const { selectedIds, toggle, select, clear, cleanupInvalidSelection, addMany } = useSelectionStore();
   const { cleanupInvalidRules, handleTagClick, isPanelOpen, savedRules } = useRulesStore();
   const {
@@ -76,11 +81,17 @@ export function TaggingPageContainer() {
   const [recentPickedTagIds, setRecentPickedTagIds] = useState<NodeId[]>([]);
   // Highlight tag ID (for search result click feedback)
   const [highlightTagId, setHighlightTagId] = useState<NodeId | null>(null);
+  // Control rename modal for newly created folder
+  const [renameFolderId, setRenameFolderId] = useState<NodeId | null>(null);
+  // Control tag edit drawer (for editing existing tags)
+  const [editTagId, setEditTagId] = useState<NodeId | null>(null);
 
   // Track if navigation is from popstate (to avoid pushing history again)
   const isPopstateRef = useRef(false);
   // Track previous folderId to avoid duplicate pushState
   const prevFolderIdRef = useRef<NodeId | null>(null);
+  // Track previous taxonomy reference to detect full replacement (not just updates)
+  const prevTaxonomyRef = useRef<Taxonomy | null>(null);
 
   /**
    * Read folder ID from URL query string.
@@ -204,6 +215,36 @@ export function TaggingPageContainer() {
     onImportSuccess: clear,
   });
 
+  // Handle New Tree button
+  const handleNewTree = useCallback(() => {
+    const confirmMessage = uiLanguage === 'zh' 
+      ? '确定要创建新树吗？这将清空当前分类和所有已选标签。'
+      : 'Are you sure you want to create a new tree? This will clear the current taxonomy and all selected tags.';
+    
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    // Create empty but valid Taxonomy
+    const emptyTaxonomy: Taxonomy = {
+      schemaVersion: SCHEMA_VERSION,
+      nodes: [],
+      meta: {
+        name: uiLanguage === 'zh' ? '未命名' : 'Untitled',
+      },
+    };
+
+    // Set the empty taxonomy (this will build index automatically)
+    setTaxonomy(emptyTaxonomy);
+    
+    // Clear selection
+    useSelectionStore.getState().clear();
+    
+    // Clear rules (get index after setTaxonomy, but it's built synchronously)
+    const currentIndex = useTaxonomyStore.getState().index;
+    useRulesStore.getState().setSavedRules([], currentIndex);
+  }, [uiLanguage, setTaxonomy]);
+
   // Load sample taxonomy on mount
   useEffect(() => {
     if (!taxonomy && !sampleLoadingRef.current) {
@@ -249,15 +290,31 @@ export function TaggingPageContainer() {
     }
   }, [highlightTagId]);
 
-  // Reset navigation and history when taxonomy changes
+  // Reset navigation and history when taxonomy is fully replaced (import/clear), not on updates
   useEffect(() => {
-    // Reset to root without pushing history (taxonomy change is not a navigation action)
-    prevFolderIdRef.current = null;
-    setCurrentFolderIdInternal(null);
-    setRecentPickedTagIds([]);
-    // Reset URL to root
-    const url = buildUrl(null);
-    history.replaceState({ folderId: null }, '', url);
+    const prevTaxonomy = prevTaxonomyRef.current;
+    
+    // Only reset if:
+    // 1. Taxonomy changed from null to non-null (initial load or import)
+    // 2. Taxonomy changed from non-null to null (clear)
+    // 3. Taxonomy meta.name changed (new tree created or imported different taxonomy)
+    const shouldReset = 
+      (prevTaxonomy === null && taxonomy !== null) || // null -> non-null
+      (prevTaxonomy !== null && taxonomy === null) || // non-null -> null
+      (prevTaxonomy !== null && taxonomy !== null && 
+       prevTaxonomy.meta.name !== taxonomy.meta.name); // meta.name changed (new tree)
+    
+    if (shouldReset) {
+      prevFolderIdRef.current = null;
+      setCurrentFolderIdInternal(null);
+      setRecentPickedTagIds([]);
+      // Reset URL to root
+      const url = buildUrl(null);
+      history.replaceState({ folderId: null }, '', url);
+    }
+    
+    // Update ref for next comparison
+    prevTaxonomyRef.current = taxonomy;
   }, [taxonomy, buildUrl]);
 
   // ========================================================================
@@ -300,17 +357,25 @@ export function TaggingPageContainer() {
 
   /**
    * Handle tag toggle with:
-   * - QuickSet editing mode handling (highest priority)
+   * - Editing mode handling (highest priority - open edit drawer)
+   * - QuickSet editing mode handling
    * - recentPickedTagIds history tracking
    * - Rules panel click handling
    * - Normal selection toggle
    * 
    * Mode priorities:
-   * 1. QuickSet editing mode: add tag to current QuickSet folder
-   * 2. Rules panel open: let rules handle it
-   * 3. Normal mode: toggle selection
+   * 1. Editing mode (isEditing): open tag edit drawer
+   * 2. QuickSet editing mode: add tag to current QuickSet folder
+   * 3. Rules panel open: let rules handle it
+   * 4. Normal mode: toggle selection
    */
   const handleToggleTag = useCallback((tagId: NodeId) => {
+    // Editing mode: open tag edit drawer (don't toggle selection)
+    if (isEditing) {
+      setEditTagId(tagId);
+      return;
+    }
+
     // QuickSet editing mode: add tag to current folder
     if (isQuickSetEditing) {
       const result = addTagToCurrentFolder(tagId);
@@ -359,7 +424,7 @@ export function TaggingPageContainer() {
         return updated.slice(0, historySize);
       });
     }
-  }, [isQuickSetEditing, addTagToCurrentFolder, isPanelOpen, selectedIds, toggle, handleTagClick, historySize]);
+  }, [isEditing, isQuickSetEditing, addTagToCurrentFolder, isPanelOpen, selectedIds, toggle, handleTagClick, historySize]);
 
   /**
    * Handle folder navigation (from left tree or right panel folder clicks).
@@ -419,9 +484,61 @@ export function TaggingPageContainer() {
     );
   }
 
+  // Handle create folder
+  const handleCreateFolder = useCallback(() => {
+    if (!index) return;
+    
+    const defaultLabel = uiLanguage === 'zh' ? '新文件夹' : 'New Folder';
+    const newFolderId = createNode('folder', currentFolderId, defaultLabel);
+    
+    if (!newFolderId) {
+      console.error('[TagSelector] Failed to create folder: createNode returned null');
+      return;
+    }
+    
+    // Get fresh index after createNode (it rebuilds the index)
+    const freshIndex = useTaxonomyStore.getState().index;
+    
+    if (!freshIndex || !freshIndex.byId.has(newFolderId)) {
+      console.error('[TagSelector] New folder not found in index after creation');
+      return;
+    }
+    
+    // Directly set currentFolderId (bypass handleNavigateToFolder which uses stale index)
+    // The new folder was just created by createNode, so we know it's valid
+    setCurrentFolderId(newFolderId);
+    // Set renameFolderId to trigger the rename modal
+    setRenameFolderId(newFolderId);
+  }, [index, uiLanguage, currentFolderId, createNode, setCurrentFolderId]);
+
+  // Handle create tag
+  const handleCreateTag = useCallback(() => {
+    if (!index) return;
+    
+    const newTagId = createNode('tag', currentFolderId, 'new_tag');
+    
+    if (newTagId) {
+      // Trigger tag edit modal (placeholder for now)
+      setEditTagId(newTagId);
+      // TODO: Open tag edit modal (Prompt3)
+      console.log('Tag edit modal will be implemented in Prompt3, tagId:', newTagId);
+    }
+  }, [index, currentFolderId, createNode]);
+
+  // Left bottom controls section
+  const leftBottomControlsSection = (
+    <CreateNodeButtons
+      currentFolderId={currentFolderId}
+      onCreateFolder={handleCreateFolder}
+      onCreateTag={handleCreateTag}
+    />
+  );
+
   return (
+    <>
     <AppShellLayout
       isDesktop={!!isDesktop}
+      leftBottomSection={leftBottomControlsSection}
       errorBarSection={
         validationErrors.length > 0 ? (
           <ValidationErrorBar
@@ -432,7 +549,11 @@ export function TaggingPageContainer() {
       }
       searchSection={
         <Stack gap="xs">
-          <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="搜索文件夹或标签..." />
+          <SearchBar 
+            value={searchQuery} 
+            onChange={setSearchQuery} 
+            placeholder={uiLanguage === 'zh' ? '搜索文件夹或标签...' : 'Search folders or tags...'} 
+          />
           <SearchResultsPanel
             index={index}
             query={searchQuery}
@@ -485,31 +606,46 @@ export function TaggingPageContainer() {
         />
       }
       importExportSection={
-        <Group gap="sm">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".json"
-            onChange={handleImport}
-            style={{ display: 'none' }}
-          />
-          <Button size="sm" onClick={() => fileInputRef.current?.click()}>
-            导入项目
-          </Button>
-          <Button size="sm" onClick={handleExport}>
-            导出项目
-          </Button>
-        </Group>
+        <Stack gap="sm">
+          {isEditing && (
+            <Alert color="blue" variant="light" style={{ padding: '8px 12px' }}>
+              {uiLanguage === 'zh' ? '编辑模式' : 'Editing Mode'}
+            </Alert>
+          )}
+          <Group gap="sm" justify="space-between">
+            <Group gap="sm">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleImport}
+                style={{ display: 'none' }}
+              />
+              <Button size="sm" onClick={handleNewTree}>
+                {uiLanguage === 'zh' ? '新建' : 'New Tree'}
+              </Button>
+              <Button size="sm" onClick={() => fileInputRef.current?.click()}>
+                {uiLanguage === 'zh' ? '导入' : 'Import'}
+              </Button>
+              <Button size="sm" onClick={handleExport}>
+                {uiLanguage === 'zh' ? '导出' : 'Export'}
+              </Button>
+            </Group>
+            <Group gap="sm">
+              <RulesToggleButton />
+              <LanguageToggle />
+            </Group>
+          </Group>
+        </Stack>
       }
       currentFolderHeader={
-        <Group justify="space-between" align="center">
-          <CurrentFolderHeader
-            index={index}
-            currentFolderId={currentFolderId}
-            onNavigateToFolder={handleNavigateToFolder}
-          />
-          <RulesToggleButton />
-        </Group>
+        <CurrentFolderHeader
+          index={index}
+          currentFolderId={currentFolderId}
+          onNavigateToFolder={handleNavigateToFolder}
+          renameFolderId={renameFolderId}
+          onRenameModalClose={() => setRenameFolderId(null)}
+        />
       }
       mainWorkArea={
         <div
@@ -539,6 +675,7 @@ export function TaggingPageContainer() {
                 selectedIds={selectedIds}
                 excludedTagIds={excludedTagIds}
                 highlightTagId={highlightTagId}
+                isEditing={isEditing}
                 onEnterFolder={handleNavigateToFolder}
                 onToggleTag={handleToggleTag}
               />
@@ -587,5 +724,13 @@ export function TaggingPageContainer() {
         ) : undefined
       }
     />
+    {/* Tag Edit Drawer */}
+    <TagEditDrawer
+      opened={editTagId !== null}
+      onClose={() => setEditTagId(null)}
+      tagId={editTagId}
+      index={index}
+    />
+    </>
   );
 }

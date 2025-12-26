@@ -2,6 +2,8 @@ import { Button, Badge, ActionIcon, Group } from '@mantine/core';
 import { X } from 'lucide-react';
 import type { NodeId, TaxonomyIndex } from '@tagselector/tag-core';
 import { getTagColorHex, getReadableTextColor } from '../../utils/tagColor';
+import { getTagDisplayLabel } from '../../utils/searchMatch';
+import { useSettingsStore } from '../../store';
 import styles from './SelectionChips.module.css';
 
 interface SelectionChipsProps {
@@ -17,6 +19,7 @@ export function SelectionChips({
   onDeselect,
   onClear,
 }: SelectionChipsProps) {
+  const { uiLanguage } = useSettingsStore();
   const selectedNodes = Array.from(selectedIds)
     .map((id) => index.byId.get(id))
     .filter(Boolean);
@@ -24,7 +27,7 @@ export function SelectionChips({
   if (selectedNodes.length === 0) {
     return (
       <div className={styles.empty}>
-        点击标签以选择
+        {uiLanguage === 'zh' ? '点击标签以选择' : 'Click tags to select'}
       </div>
     );
   }
@@ -73,6 +76,8 @@ export function SelectionChips({
                 style: badgeStyle,
               };
 
+          const displayLabel = getTagDisplayLabel(node!);
+          
           return (
             <Group key={node!.id} gap={4} wrap="nowrap">
               <Badge
@@ -82,14 +87,14 @@ export function SelectionChips({
                 className="tag-badge"
                 {...badgeProps}
               >
-                {node!.label}
+                {displayLabel}
               </Badge>
               <ActionIcon
                 size="sm"
                 variant="subtle"
                 color="blue"
                 onClick={() => onDeselect(node!.id)}
-                aria-label={`Remove ${node!.label}`}
+                aria-label={`Remove ${displayLabel}`}
               >
                 <X size={14} />
               </ActionIcon>

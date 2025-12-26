@@ -12,7 +12,7 @@ import { useMemo } from 'react';
 import { Paper, Stack, Text, Group, UnstyledButton } from '@mantine/core';
 import { Folder, Tag } from 'lucide-react';
 import type { NodeId, TaxonomyIndex, TagNode } from '@tagselector/tag-core';
-import { nodeMatchesQuery } from '../../utils/searchMatch';
+import { nodeMatchesQuery, getTagDisplayLabel } from '../../utils/searchMatch';
 
 interface SearchResultsPanelProps {
   index: TaxonomyIndex;
@@ -131,7 +131,7 @@ export function SearchResultsPanel({
                     <Group gap="xs" wrap="nowrap">
                       <Tag size={14} />
                       <Text size="sm" style={{ flex: 1 }}>
-                        {tag.label}
+                        {getTagDisplayLabel(tag)}
                       </Text>
                       <Text size="xs" c="dimmed">
                         {buildPath(tag, index)}

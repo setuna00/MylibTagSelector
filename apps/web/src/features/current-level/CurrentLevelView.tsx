@@ -15,10 +15,13 @@
  */
 
 import { useMemo } from 'react';
-import { Badge, Group, Text, Stack, Paper } from '@mantine/core';
-import { Folder, Tag, ChevronRight } from 'lucide-react';
+import { Badge, Group, Text, Stack, Paper, ActionIcon } from '@mantine/core';
+import { Folder, Tag, ChevronRight, ArrowUp, ArrowDown, Trash2 } from 'lucide-react';
+import { notifications } from '@mantine/notifications';
 import type { NodeId, TaxonomyIndex, TagNode } from '@tagselector/tag-core';
 import { getTagColorHex, getReadableTextColor, getOutlineTextColor } from '../../utils/tagColor';
+import { getTagDisplayLabel } from '../../utils/searchMatch';
+import { useTaxonomyStore, useSelectionStore, useSettingsStore } from '../../store';
 import styles from './CurrentLevelView.module.css';
 
 /**
@@ -56,6 +59,8 @@ interface CurrentLevelViewProps {
   excludedTagIds?: Set<NodeId>;
   /** Tag ID to highlight (for search result click feedback) */
   highlightTagId?: NodeId;
+  /** Whether in editing mode (shows order controls) */
+  isEditing?: boolean;
   onEnterFolder: (folderId: NodeId) => void;
   onToggleTag: (tagId: NodeId) => void;
 }
@@ -66,9 +71,61 @@ export function CurrentLevelView({
   selectedIds,
   excludedTagIds = new Set(),
   highlightTagId,
+  isEditing = false,
   onEnterFolder,
   onToggleTag,
 }: CurrentLevelViewProps) {
+  const { swapNodeOrder, deleteNode } = useTaxonomyStore();
+  const { deselect } = useSelectionStore();
+  const { uiLanguage } = useSettingsStore();
+
+  const handleDeleteNode = (nodeId: NodeId, nodeLabel: string) => {
+    const node = index.byId.get(nodeId);
+    if (!node) return;
+
+    // Confirm deletion
+    const confirmMessage = uiLanguage === 'zh' 
+      ? `确定要删除"${nodeLabel}"吗？${node.kind === 'folder' ? '（文件夹必须为空）' : ''}`
+      : `Are you sure you want to delete "${nodeLabel}"?${node.kind === 'folder' ? ' (Folder must be empty)' : ''}`;
+    
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    const result = deleteNode(nodeId);
+    
+    if (result.success) {
+      // Clean up selectedIds for removed tags
+      for (const tagId of result.removedTagIds) {
+        deselect(tagId);
+      }
+      
+      const successMessage = uiLanguage === 'zh' 
+        ? `已删除"${nodeLabel}"`
+        : `Deleted "${nodeLabel}"`;
+      notifications.show({
+        message: successMessage,
+        color: 'green',
+        autoClose: 2000,
+      });
+    } else {
+      let errorMessage: string;
+      if (result.reason === 'folder_not_empty') {
+        errorMessage = uiLanguage === 'zh' 
+          ? '无法删除：文件夹不为空，请先清空文件夹'
+          : 'Cannot delete: Folder is not empty, please empty it first';
+      } else {
+        errorMessage = uiLanguage === 'zh' 
+          ? '删除失败：节点未找到'
+          : 'Delete failed: Node not found';
+      }
+      notifications.show({
+        message: errorMessage,
+        color: 'red',
+        autoClose: 3000,
+      });
+    }
+  };
   // Get direct children of current folder
   const children = useMemo(() => {
     const childIds = index.childrenOf.get(currentFolderId) || [];
@@ -122,23 +179,61 @@ export function CurrentLevelView({
             子文件夹
           </Text>
           <div className={styles.folderGrid}>
-            {folders.map((folder) => (
-              <Paper
-                key={folder.id}
-                p="sm"
-                withBorder
-                className={styles.folderCard}
-                onClick={() => onEnterFolder(folder.id)}
-              >
-                <Group gap="xs" wrap="nowrap">
-                  <Folder size={16} className={styles.folderIcon} />
-                  <Text size="sm" className={styles.folderLabel}>
-                    {folder.label}
-                  </Text>
-                  <ChevronRight size={14} className={styles.chevron} />
-                </Group>
-              </Paper>
-            ))}
+            {folders.map((folder, index) => {
+              const canMoveUp = index > 0;
+              const canMoveDown = index < folders.length - 1;
+              
+              return (
+                <Paper
+                  key={folder.id}
+                  p="sm"
+                  withBorder
+                  className={styles.folderCard}
+                  onClick={() => onEnterFolder(folder.id)}
+                >
+                  <Group gap="xs" wrap="nowrap" justify="space-between">
+                    <Group gap="xs" wrap="nowrap" style={{ flex: 1 }}>
+                      <Folder size={16} className={styles.folderIcon} />
+                      <Text size="sm" className={styles.folderLabel}>
+                        {folder.label}
+                      </Text>
+                      <ChevronRight size={14} className={styles.chevron} />
+                    </Group>
+                    {isEditing && (
+                      <Group gap={4} wrap="nowrap" onClick={(e) => e.stopPropagation()}>
+                        <ActionIcon
+                          size="sm"
+                          variant="subtle"
+                          disabled={!canMoveUp}
+                          onClick={() => swapNodeOrder(folder.id, 'up')}
+                          title="上移"
+                        >
+                          <ArrowUp size={14} />
+                        </ActionIcon>
+                        <ActionIcon
+                          size="sm"
+                          variant="subtle"
+                          disabled={!canMoveDown}
+                          onClick={() => swapNodeOrder(folder.id, 'down')}
+                          title="下移"
+                        >
+                          <ArrowDown size={14} />
+                        </ActionIcon>
+                        <ActionIcon
+                          size="sm"
+                          variant="subtle"
+                          color="red"
+                          onClick={() => handleDeleteNode(folder.id, folder.label)}
+                          title="删除"
+                        >
+                          <Trash2 size={14} />
+                        </ActionIcon>
+                      </Group>
+                    )}
+                  </Group>
+                </Paper>
+              );
+            })}
           </div>
         </div>
       )}
@@ -158,7 +253,7 @@ export function CurrentLevelView({
           </Group>
           {tags.length > 0 ? (
             <div className={styles.tagGrid}>
-              {tags.map((tag) => {
+              {tags.map((tag, index) => {
                 const isSelected = selectedIds.has(tag.id);
                 const isHighlighted = tag.id === highlightTagId;
                 const hex = getTagColorHex(tag);
@@ -186,18 +281,66 @@ export function CurrentLevelView({
                       style: badgeStyle,
                     };
 
+                // Get display label: use displayName if available, fallback to label
+                const displayLabel = getTagDisplayLabel(tag);
+                
+                const canMoveUp = index > 0;
+                const canMoveDown = index < tags.length - 1;
+
                 return (
-                  <Badge
-                    key={tag.id}
-                    size="lg"
-                    variant={isSelected ? 'filled' : 'outline'}
-                    {...badgeProps}
-                    className={`tag-badge ${styles.tagBadge} ${isHighlighted ? styles.tagBadgeHighlight : ''}`}
-                    leftSection={<Tag size={14} />}
-                    onClick={() => onToggleTag(tag.id)}
-                  >
-                    {tag.label}
-                  </Badge>
+                  <Group key={tag.id} gap="xs" wrap="nowrap" align="center">
+                    <Badge
+                      size="lg"
+                      variant={isSelected ? 'filled' : 'outline'}
+                      {...badgeProps}
+                      className={`tag-badge ${styles.tagBadge} ${isHighlighted ? styles.tagBadgeHighlight : ''}`}
+                      leftSection={<Tag size={14} />}
+                      onClick={() => onToggleTag(tag.id)}
+                      style={{ flex: 1 }}
+                    >
+                      {displayLabel}
+                    </Badge>
+                    {isEditing && (
+                      <Group gap={4} wrap="nowrap">
+                        <ActionIcon
+                          size="sm"
+                          variant="subtle"
+                          disabled={!canMoveUp}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            swapNodeOrder(tag.id, 'up');
+                          }}
+                          title="上移"
+                        >
+                          <ArrowUp size={14} />
+                        </ActionIcon>
+                        <ActionIcon
+                          size="sm"
+                          variant="subtle"
+                          disabled={!canMoveDown}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            swapNodeOrder(tag.id, 'down');
+                          }}
+                          title="下移"
+                        >
+                          <ArrowDown size={14} />
+                        </ActionIcon>
+                        <ActionIcon
+                          size="sm"
+                          variant="subtle"
+                          color="red"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteNode(tag.id, displayLabel);
+                          }}
+                          title="删除"
+                        >
+                          <Trash2 size={14} />
+                        </ActionIcon>
+                      </Group>
+                    )}
+                  </Group>
                 );
               })}
             </div>

@@ -21,6 +21,7 @@
 import type { ReactNode } from 'react';
 import { AppShell, Paper, Stack, Tabs } from '@mantine/core';
 import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
+import { useSettingsStore } from '../store';
 
 interface AppShellLayoutProps {
   isDesktop: boolean;
@@ -43,6 +44,8 @@ interface AppShellLayoutProps {
    * Used for QuickSet editing mode.
    */
   bottomModeSection?: ReactNode;
+  /** Optional section rendered at bottom of left panel (Desktop only, after QuickSets) */
+  leftBottomSection?: ReactNode;
 }
 
 export function AppShellLayout({
@@ -58,7 +61,9 @@ export function AppShellLayout({
   errorBarSection,
   bottomAboveSelectionSection,
   bottomModeSection,
+  leftBottomSection,
 }: AppShellLayoutProps) {
+  const { uiLanguage } = useSettingsStore();
   // Desktop 双栏布局
   if (isDesktop) {
     return (
@@ -71,7 +76,9 @@ export function AppShellLayout({
                 {/* Fixed top: Search header */}
                 <Paper p="md" withBorder style={{ flexShrink: 0 }}>
                   <Stack gap="sm">
-                    <h2 style={{ margin: 0, fontSize: '16px' }}>文件夹导航</h2>
+                    <h2 style={{ margin: 0, fontSize: '16px' }}>
+                      {uiLanguage === 'zh' ? '文件夹导航' : 'Folder Navigation'}
+                    </h2>
                     {searchSection}
                   </Stack>
                 </Paper>
@@ -90,6 +97,12 @@ export function AppShellLayout({
                     }}
                   >
                     {quickSetsSection}
+                  </div>
+                )}
+                {/* Fixed bottom: Left bottom section (after QuickSets, always visible) */}
+                {leftBottomSection && (
+                  <div style={{ flexShrink: 0 }}>
+                    {leftBottomSection}
                   </div>
                 )}
               </Stack>
@@ -202,7 +215,7 @@ export function AppShellLayout({
                             flexShrink: 0,
                           }}
                         >
-                          导出预览
+                          {uiLanguage === 'zh' ? '导出预览' : 'Export Preview'}
                         </h3>
                         <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
                           {exportPreviewSection}

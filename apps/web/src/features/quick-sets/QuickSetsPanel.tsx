@@ -22,6 +22,7 @@ import type { NodeId, TaxonomyIndex, Taxonomy } from '@tagselector/tag-core';
 import type { QuickTree, QuickTreeNode } from '../../types/project-pack';
 import { QuickSetsEditorModal } from './QuickSetsEditorModal';
 import { useQuickSetEditSession } from './quicksetEditSession';
+import { useSettingsStore } from '../../store';
 import styles from './QuickSetsPanel.module.css';
 
 interface QuickSetsPanelProps {
@@ -144,6 +145,7 @@ export function QuickSetsPanel({
   onNavigateToFolder,
   onToggleTag,
 }: QuickSetsPanelProps) {
+  const { uiLanguage } = useSettingsStore();
   // Track expanded state: tree-level and group-level
   const [expandedTrees, setExpandedTrees] = useState<Set<string>>(() => {
     // Default: expand first tree if exists
@@ -213,77 +215,79 @@ export function QuickSetsPanel({
 
   // Header section (shared between empty and non-empty states)
   const headerSection = (
-    <Group gap="xs" mb="xs" justify="space-between">
-      <Group gap="xs">
-        <Layers size={14} className={styles.starIcon} />
-        <Text size="sm" fw={600}>快捷分类</Text>
-        {isEditing && (
-          <Badge size="xs" color="blue" variant="light">
-            编辑中
-          </Badge>
-        )}
-      </Group>
-      <Group gap="xs">
-        {/* New QuickSet button */}
-        {showNewQuickSetInput ? (
-          <Group gap="xs" wrap="nowrap">
-            <TextInput
-              size="xs"
-              placeholder="名称..."
-              value={newQuickSetName}
-              onChange={(e) => setNewQuickSetName(e.currentTarget.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleCreateNewQuickSet();
-                if (e.key === 'Escape') {
+      <Group gap="xs" mb="xs" justify="space-between">
+        <Group gap="xs">
+          <Layers size={14} className={styles.starIcon} />
+          <Text size="sm" fw={600}>
+            {uiLanguage === 'zh' ? '快捷分类' : 'Quick Categories'}
+          </Text>
+          {isEditing && (
+            <Badge size="xs" color="blue" variant="light">
+              {uiLanguage === 'zh' ? '编辑中' : 'Editing'}
+            </Badge>
+          )}
+        </Group>
+        <Group gap="xs">
+          {/* New QuickSet button */}
+          {showNewQuickSetInput ? (
+            <Group gap="xs" wrap="nowrap">
+              <TextInput
+                size="xs"
+                placeholder={uiLanguage === 'zh' ? '名称...' : 'Name...'}
+                value={newQuickSetName}
+                onChange={(e) => setNewQuickSetName(e.currentTarget.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCreateNewQuickSet();
+                  if (e.key === 'Escape') {
+                    setShowNewQuickSetInput(false);
+                    setNewQuickSetName('');
+                  }
+                }}
+                autoFocus
+                style={{ width: 100 }}
+              />
+              <ActionIcon
+                size="sm"
+                variant="subtle"
+                color="green"
+                onClick={handleCreateNewQuickSet}
+                disabled={!newQuickSetName.trim()}
+              >
+                <Check size={14} />
+              </ActionIcon>
+              <ActionIcon
+                size="sm"
+                variant="subtle"
+                color="gray"
+                onClick={() => {
                   setShowNewQuickSetInput(false);
                   setNewQuickSetName('');
-                }
-              }}
-              autoFocus
-              style={{ width: 100 }}
-            />
+                }}
+              >
+                <X size={14} />
+              </ActionIcon>
+            </Group>
+          ) : (
             <ActionIcon
               size="sm"
-              variant="subtle"
-              color="green"
-              onClick={handleCreateNewQuickSet}
-              disabled={!newQuickSetName.trim()}
+              variant="light"
+              color="blue"
+              onClick={() => setShowNewQuickSetInput(true)}
+              title={uiLanguage === 'zh' ? '新建快捷分类' : 'New Quick Category'}
             >
-              <Check size={14} />
+              <Plus size={14} />
             </ActionIcon>
-            <ActionIcon
-              size="sm"
-              variant="subtle"
-              color="gray"
-              onClick={() => {
-                setShowNewQuickSetInput(false);
-                setNewQuickSetName('');
-              }}
-            >
-              <X size={14} />
-            </ActionIcon>
-          </Group>
-        ) : (
-          <ActionIcon
-            size="sm"
+          )}
+          <Button
+            size="xs"
             variant="light"
-            color="blue"
-            onClick={() => setShowNewQuickSetInput(true)}
-            title="新建快捷分类"
+            leftSection={<Settings size={12} />}
+            onClick={() => setEditorOpen(true)}
           >
-            <Plus size={14} />
-          </ActionIcon>
-        )}
-        <Button
-          size="xs"
-          variant="light"
-          leftSection={<Settings size={12} />}
-          onClick={() => setEditorOpen(true)}
-        >
-          高级
-        </Button>
+            {uiLanguage === 'zh' ? '高级' : 'Advanced'}
+          </Button>
+        </Group>
       </Group>
-    </Group>
   );
 
   // Empty state: no quickTrees configured
@@ -291,7 +295,9 @@ export function QuickSetsPanel({
     return (
       <Paper p="sm" withBorder className={styles.container}>
         {headerSection}
-        <Text size="xs" c="dimmed">暂无快捷分类，点击 + 创建</Text>
+        <Text size="xs" c="dimmed">
+          {uiLanguage === 'zh' ? '暂无快捷分类，点击 + 创建' : 'No quick categories, click + to create'}
+        </Text>
 
         <QuickSetsEditorModal
           opened={editorOpen}
@@ -337,7 +343,7 @@ export function QuickSetsPanel({
                   e.stopPropagation();
                   handleEnterEditMode(tree.id);
                 }}
-                title={`编辑 ${tree.name}`}
+                title={uiLanguage === 'zh' ? `编辑 ${tree.name}` : `Edit ${tree.name}`}
               >
                 <Edit2 size={14} />
               </ActionIcon>

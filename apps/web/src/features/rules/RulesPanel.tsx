@@ -50,6 +50,8 @@ import {
   type RuleValidationError,
   type RuleValidationWarning,
 } from '../../store/rulesStore';
+import { useSettingsStore } from '../../store';
+import { getTagDisplayLabel } from '../../utils/searchMatch';
 import styles from './RulesPanel.module.css';
 
 interface RulesPanelProps {
@@ -57,14 +59,15 @@ interface RulesPanelProps {
 }
 
 /**
- * Get tag label from index, or "(missing)" if not found.
+ * Get tag display label from index, or "(missing)" if not found.
+ * Uses displayName if available, otherwise falls back to label.
  */
 function getTagLabel(index: TaxonomyIndex, tagId: NodeId): string {
   const node = index.byId.get(tagId);
   if (!node) {
     return '(missing)';
   }
-  return node.label;
+  return getTagDisplayLabel(node);
 }
 
 /**
@@ -90,13 +93,16 @@ interface ValidationErrorsDisplayProps {
 }
 
 function ValidationErrorsDisplay({ errors, onDismiss }: ValidationErrorsDisplayProps) {
+  const { uiLanguage } = useSettingsStore();
   if (errors.length === 0) return null;
 
   return (
     <Alert
       color="red"
       icon={<AlertTriangle size={16} />}
-      title={`保存失败 (${errors.length} 个错误)`}
+      title={uiLanguage === 'zh' 
+        ? `保存失败 (${errors.length} 个错误)`
+        : `Save failed (${errors.length} errors)`}
       withCloseButton
       onClose={onDismiss}
       className={styles.errorAlert}
@@ -124,13 +130,16 @@ interface ValidationWarningsDisplayProps {
 }
 
 function ValidationWarningsDisplay({ warnings, onDismiss }: ValidationWarningsDisplayProps) {
+  const { uiLanguage } = useSettingsStore();
   if (warnings.length === 0) return null;
 
   return (
     <Alert
       color="yellow"
       icon={<AlertTriangle size={16} />}
-      title={`警告 (${warnings.length} 个)`}
+      title={uiLanguage === 'zh' 
+        ? `警告 (${warnings.length} 个)`
+        : `Warnings (${warnings.length})`}
       withCloseButton
       onClose={onDismiss}
       className={styles.errorAlert}
@@ -164,6 +173,7 @@ interface RuleItemProps {
 }
 
 function RuleItem({ rule, index, isEditing, editMode, hasError }: RuleItemProps) {
+  const { uiLanguage } = useSettingsStore();
   const [expanded, setExpanded] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState(rule.name);
@@ -263,7 +273,7 @@ function RuleItem({ rule, index, isEditing, editMode, hasError }: RuleItemProps)
             fw={500}
             className={styles.ruleName}
             onClick={() => setEditingName(true)}
-            title="点击编辑名称"
+            title={uiLanguage === 'zh' ? '点击编辑名称' : 'Click to edit name'}
           >
             {rule.name}
           </Text>
@@ -295,7 +305,7 @@ function RuleItem({ rule, index, isEditing, editMode, hasError }: RuleItemProps)
           <div className={styles.triggerSection}>
             <Group gap="xs" justify="space-between" mb={6}>
               <Text size="xs" fw={500}>
-                触发标签 (A)
+                {uiLanguage === 'zh' ? '触发标签 (A)' : 'Trigger Tag (A)'}
               </Text>
               <Button
                 size="compact-xs"
@@ -304,7 +314,9 @@ function RuleItem({ rule, index, isEditing, editMode, hasError }: RuleItemProps)
                 leftSection={<Crosshair size={12} />}
                 onClick={handleTriggerClick}
               >
-                {isTriggerMode ? '选择中...' : '选择'}
+                {isTriggerMode 
+                  ? (uiLanguage === 'zh' ? '选择中...' : 'Selecting...')
+                  : (uiLanguage === 'zh' ? '选择' : 'Select')}
               </Button>
             </Group>
             {rule.triggerTagId ? (
@@ -327,7 +339,9 @@ function RuleItem({ rule, index, isEditing, editMode, hasError }: RuleItemProps)
               </Badge>
             ) : (
               <Text size="sm" fs="italic" c="dimmed">
-                {isTriggerMode ? '👆 点击左侧 tag 设置' : '未设置'}
+                {isTriggerMode 
+                  ? (uiLanguage === 'zh' ? '👆 点击左侧 tag 设置' : '👆 Click left tags to set')
+                  : (uiLanguage === 'zh' ? '未设置' : 'Not set')}
               </Text>
             )}
           </div>
@@ -336,7 +350,7 @@ function RuleItem({ rule, index, isEditing, editMode, hasError }: RuleItemProps)
           <div className={styles.typeSection}>
             <Group gap="md" align="center">
               <Text size="xs" c={rule.type === 'EXCLUDES' ? 'red' : 'dimmed'}>
-                互斥 ⊘
+                {uiLanguage === 'zh' ? '互斥 ⊘' : 'Exclude ⊘'}
               </Text>
               <Switch
                 size="md"
@@ -347,7 +361,7 @@ function RuleItem({ rule, index, isEditing, editMode, hasError }: RuleItemProps)
                 color="green"
               />
               <Text size="xs" c={rule.type === 'REQUIRES' ? 'green' : 'dimmed'}>
-                依赖 →
+                {uiLanguage === 'zh' ? '依赖 →' : 'Require →'}
               </Text>
             </Group>
           </div>
@@ -357,7 +371,7 @@ function RuleItem({ rule, index, isEditing, editMode, hasError }: RuleItemProps)
             <Group gap="xs" justify="space-between" mb={6}>
               <Group gap="xs">
                 <Text size="xs" fw={500}>
-                  目标标签 ({rule.targetTagIds.length})
+                  {uiLanguage === 'zh' ? `目标标签 (${rule.targetTagIds.length})` : `Target Tags (${rule.targetTagIds.length})`}
                 </Text>
                 {rule.targetTagIds.length > 0 && (
                   <ActionIcon
@@ -378,7 +392,9 @@ function RuleItem({ rule, index, isEditing, editMode, hasError }: RuleItemProps)
                 leftSection={<Target size={12} />}
                 onClick={handleTargetsClick}
               >
-                {isTargetsMode ? '添加中...' : '添加'}
+                {isTargetsMode 
+                  ? (uiLanguage === 'zh' ? '添加中...' : 'Adding...')
+                  : (uiLanguage === 'zh' ? '添加' : 'Add')}
               </Button>
             </Group>
             <div className={styles.targetsContainer}>
@@ -404,7 +420,9 @@ function RuleItem({ rule, index, isEditing, editMode, hasError }: RuleItemProps)
                 ))
               ) : (
                 <Text size="sm" fs="italic" c="dimmed">
-                  {isTargetsMode ? '👆 点击左侧 tags 添加' : '无目标'}
+                  {isTargetsMode 
+                    ? (uiLanguage === 'zh' ? '👆 点击左侧 tags 添加' : '👆 Click left tags to add')
+                    : (uiLanguage === 'zh' ? '无目标' : 'No targets')}
                 </Text>
               )}
             </div>
@@ -420,6 +438,7 @@ function RuleItem({ rule, index, isEditing, editMode, hasError }: RuleItemProps)
 // ============================================================================
 
 export function RulesPanel({ index }: RulesPanelProps) {
+  const { uiLanguage } = useSettingsStore();
   const {
     draftRules,
     isPanelOpen,
@@ -455,7 +474,10 @@ export function RulesPanel({ index }: RulesPanelProps) {
 
   const handleClearAll = () => {
     if (draftRules.length === 0) return;
-    if (window.confirm(`确定要删除所有 ${draftRules.length} 条规则吗？`)) {
+    const confirmMessage = uiLanguage === 'zh' 
+      ? `确定要删除所有 ${draftRules.length} 条规则吗？`
+      : `Are you sure you want to delete all ${draftRules.length} rules?`;
+    if (window.confirm(confirmMessage)) {
       clearAllRules();
     }
   };
@@ -509,15 +531,15 @@ export function RulesPanel({ index }: RulesPanelProps) {
         <Group justify="space-between" mb="xs">
           <Group gap="xs">
             <Text size="md" fw={600}>
-              📋 规则
+              📋 {uiLanguage === 'zh' ? '规则' : 'Rules'}
             </Text>
             {unsavedChanges ? (
               <Badge size="sm" color="orange" variant="light">
-                未保存
+                {uiLanguage === 'zh' ? '未保存' : 'Unsaved'}
               </Badge>
             ) : (
               <Badge size="sm" color="green" variant="light">
-                已保存
+                {uiLanguage === 'zh' ? '已保存' : 'Saved'}
               </Badge>
             )}
           </Group>
@@ -534,7 +556,7 @@ export function RulesPanel({ index }: RulesPanelProps) {
             onClick={handleSave}
             disabled={!unsavedChanges}
           >
-            保存
+            {uiLanguage === 'zh' ? '保存' : 'Save'}
           </Button>
           <Button
             size="xs"
@@ -544,7 +566,7 @@ export function RulesPanel({ index }: RulesPanelProps) {
             onClick={handleDiscard}
             disabled={!unsavedChanges}
           >
-            放弃更改
+            {uiLanguage === 'zh' ? '放弃更改' : 'Discard Changes'}
           </Button>
         </Group>
       </div>
@@ -566,8 +588,8 @@ export function RulesPanel({ index }: RulesPanelProps) {
         <Paper p="xs" mb="sm" className={styles.editModeIndicator}>
           <Text size="xs" c="blue" ta="center">
             {editMode === 'selecting-trigger'
-              ? '👈 点击左侧标签设为触发器'
-              : '👈 点击左侧标签添加到目标'}
+              ? (uiLanguage === 'zh' ? '👈 点击左侧标签设为触发器' : '👈 Click left tags to set as trigger')
+              : (uiLanguage === 'zh' ? '👈 点击左侧标签添加到目标' : '👈 Click left tags to add to targets')}
           </Text>
         </Paper>
       )}
@@ -576,7 +598,7 @@ export function RulesPanel({ index }: RulesPanelProps) {
       <div className={styles.rulesList}>
         {draftRules.length === 0 ? (
           <Text size="sm" c="dimmed" fs="italic" ta="center" py="lg">
-            暂无规则
+            {uiLanguage === 'zh' ? '暂无规则' : 'No rules'}
           </Text>
         ) : (
           <Stack gap="xs">
@@ -602,7 +624,7 @@ export function RulesPanel({ index }: RulesPanelProps) {
           onClick={handleCreateRule}
           fullWidth
         >
-          新建规则
+          {uiLanguage === 'zh' ? '新建规则' : 'New Rule'}
         </Button>
         {draftRules.length > 0 && (
           <Button
@@ -612,7 +634,7 @@ export function RulesPanel({ index }: RulesPanelProps) {
             onClick={handleClearAll}
             fullWidth
           >
-            清空全部
+            {uiLanguage === 'zh' ? '清空全部' : 'Clear All'}
           </Button>
         )}
       </Group>
@@ -622,7 +644,7 @@ export function RulesPanel({ index }: RulesPanelProps) {
         <div className={styles.confirmOverlay}>
           <Paper p="md" shadow="lg" className={styles.confirmDialog}>
             <Text size="sm" mb="md">
-              有未保存的更改，确定要放弃吗？
+              {uiLanguage === 'zh' ? '有未保存的更改，确定要放弃吗？' : 'You have unsaved changes. Are you sure you want to discard them?'}
             </Text>
             <Group gap="sm" justify="flex-end">
               <Button
@@ -630,14 +652,14 @@ export function RulesPanel({ index }: RulesPanelProps) {
                 variant="light"
                 onClick={() => handleConfirmClose(false)}
               >
-                继续编辑
+                {uiLanguage === 'zh' ? '继续编辑' : 'Continue Editing'}
               </Button>
               <Button
                 size="xs"
                 color="red"
                 onClick={() => handleConfirmClose(true)}
               >
-                放弃更改
+                {uiLanguage === 'zh' ? '放弃更改' : 'Discard Changes'}
               </Button>
             </Group>
           </Paper>
@@ -651,6 +673,7 @@ export function RulesPanel({ index }: RulesPanelProps) {
  * Rules toggle button to be placed in picker header.
  */
 export function RulesToggleButton() {
+  const { uiLanguage } = useSettingsStore();
   const { isPanelOpen, openPanel, closePanel, hasUnsavedChanges, savedRules } = useRulesStore();
 
   const handleClick = () => {
@@ -660,7 +683,10 @@ export function RulesToggleButton() {
       // If panel is open, allow closing via button click
       if (hasUnsavedChanges()) {
         // Show confirmation dialog if there are unsaved changes
-        if (window.confirm('有未保存的更改，确定要放弃吗？')) {
+        const confirmMessage = uiLanguage === 'zh' 
+          ? '有未保存的更改，确定要放弃吗？'
+          : 'You have unsaved changes. Are you sure you want to discard them?';
+        if (window.confirm(confirmMessage)) {
           closePanel(true);
         }
       } else {
@@ -682,7 +708,7 @@ export function RulesToggleButton() {
         ) : null
       }
     >
-      📋 规则
+      📋 {uiLanguage === 'zh' ? '规则' : 'Rules'}
     </Button>
   );
 }
