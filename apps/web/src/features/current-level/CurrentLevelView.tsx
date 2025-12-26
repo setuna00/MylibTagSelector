@@ -21,7 +21,7 @@ import { notifications } from '@mantine/notifications';
 import type { NodeId, TaxonomyIndex, TagNode } from '@tagselector/tag-core';
 import { getTagColorHex, getReadableTextColor, getOutlineTextColor } from '../../utils/tagColor';
 import { getTagDisplayLabel } from '../../utils/searchMatch';
-import { useTaxonomyStore, useSelectionStore, useSettingsStore } from '../../store';
+import { useTaxonomyStore, useSelectionStore, useSettingsStore, useRulesStore } from '../../store';
 import styles from './CurrentLevelView.module.css';
 
 /**
@@ -78,6 +78,7 @@ export function CurrentLevelView({
   const { swapNodeOrder, deleteNode } = useTaxonomyStore();
   const { deselect } = useSelectionStore();
   const { uiLanguage } = useSettingsStore();
+  const { cleanupInvalidRules } = useRulesStore();
 
   const handleDeleteNode = (nodeId: NodeId, nodeLabel: string) => {
     const node = index.byId.get(nodeId);
@@ -100,13 +101,27 @@ export function CurrentLevelView({
         deselect(tagId);
       }
       
-      const successMessage = uiLanguage === 'zh' 
-        ? `已删除"${nodeLabel}"`
-        : `Deleted "${nodeLabel}"`;
+      // Clean up rules (triggerTagId and targetTagIds that reference deleted tags)
+      // Get fresh index after deletion (it's already updated in deleteNode)
+      const freshIndex = useTaxonomyStore.getState().index;
+      cleanupInvalidRules(freshIndex);
+      
+      // Build success message with reference cleanup info
+      let successMessage: string;
+      if (result.cleanedReferenceCount > 0) {
+        successMessage = uiLanguage === 'zh' 
+          ? `已删除"${nodeLabel}"，已清理 ${result.cleanedReferenceCount} 处引用`
+          : `Deleted "${nodeLabel}", cleaned ${result.cleanedReferenceCount} reference(s)`;
+      } else {
+        successMessage = uiLanguage === 'zh' 
+          ? `已删除"${nodeLabel}"`
+          : `Deleted "${nodeLabel}"`;
+      }
+      
       notifications.show({
         message: successMessage,
         color: 'green',
-        autoClose: 2000,
+        autoClose: 3000,
       });
     } else {
       let errorMessage: string;
@@ -287,16 +302,19 @@ export function CurrentLevelView({
                 const canMoveUp = index > 0;
                 const canMoveDown = index < tags.length - 1;
 
+                // Merge badge style with flex style
+                const finalStyle = badgeStyle ? { ...badgeStyle, flex: 1 } : { flex: 1 };
+
                 return (
                   <Group key={tag.id} gap="xs" wrap="nowrap" align="center">
                     <Badge
                       size="lg"
                       variant={isSelected ? 'filled' : 'outline'}
-                      {...badgeProps}
+                      {...(hex ? {} : { color: isSelected ? 'blue' : 'gray' })}
                       className={`tag-badge ${styles.tagBadge} ${isHighlighted ? styles.tagBadgeHighlight : ''}`}
                       leftSection={<Tag size={14} />}
                       onClick={() => onToggleTag(tag.id)}
-                      style={{ flex: 1 }}
+                      style={finalStyle}
                     >
                       {displayLabel}
                     </Badge>

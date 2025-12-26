@@ -27,7 +27,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback, useMemo, useLayoutEffect } from 'react';
-import { AppShell, Button, Group, Stack, Alert } from '@mantine/core';
+import { AppShell, Button, Group, Stack } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import type { NodeId, Taxonomy } from '@tagselector/tag-core';
@@ -607,11 +607,6 @@ export function TaggingPageContainer() {
       }
       importExportSection={
         <Stack gap="sm">
-          {isEditing && (
-            <Alert color="blue" variant="light" style={{ padding: '8px 12px' }}>
-              {uiLanguage === 'zh' ? '编辑模式' : 'Editing Mode'}
-            </Alert>
-          )}
           <Group gap="sm" justify="space-between">
             <Group gap="sm">
               <input

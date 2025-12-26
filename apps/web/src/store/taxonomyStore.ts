@@ -43,7 +43,7 @@ interface TaxonomyActions {
   clearValidationErrors: () => void;
   /** Update a node's label (or taxonomy.meta.name for Root) */
   updateNodeLabel: (nodeId: NodeId | null, newLabel: string) => void;
-  /** Update a tag's data fields (label, displayName, color, aliases) */
+  /** Update a tag's data fields (label, displayName, color, aliases, recommendedTagIds) */
   updateTagData: (
     tagId: NodeId,
     updates: {
@@ -51,13 +51,14 @@ interface TaxonomyActions {
       displayName?: string;
       color?: string;
       aliases?: string[];
+      recommendedTagIds?: string[];
     }
   ) => void;
   /** Swap node order with previous or next sibling, then normalize all sibling orders */
   swapNodeOrder: (nodeId: NodeId, direction: 'up' | 'down') => void;
-  /** Delete a node (tag or empty folder). Returns success status and removed tag IDs for cleanup. */
+  /** Delete a node (tag or empty folder). Returns success status, removed tag IDs, and cleaned reference count. */
   deleteNode: (nodeId: NodeId) => 
-    | { success: true; removedTagIds: NodeId[] } 
+    | { success: true; removedTagIds: NodeId[]; cleanedReferenceCount: number } 
     | { success: false; reason: 'not_found' | 'folder_not_empty' };
   /** Create a new node (folder or tag) */
   createNode: (kind: 'folder' | 'tag', parentId: NodeId | null, defaultLabel: string) => NodeId | null;
@@ -216,6 +217,7 @@ export const useTaxonomyStore = create<TaxonomyState & TaxonomyActions>()(
           displayName?: string;
           color?: string;
           aliases?: string[];
+          recommendedTagIds?: string[];
         }
       ) => {
         const { taxonomy } = get();
@@ -235,12 +237,12 @@ export const useTaxonomyStore = create<TaxonomyState & TaxonomyActions>()(
 
         // Type assertion for node with data field
         const nodeWithData = node as TagNode & {
-          data?: { displayName?: string; aliases?: string[]; color?: string };
+          data?: { displayName?: string; aliases?: string[]; color?: string; recommendedTagIds?: string[] };
         };
 
         // Build updated node
         const updatedNode: TagNode & {
-          data?: { displayName?: string; aliases?: string[]; color?: string };
+          data?: { displayName?: string; aliases?: string[]; color?: string; recommendedTagIds?: string[] };
         } = {
           ...node,
           ...(updates.label !== undefined ? { label: updates.label } : {}),
@@ -248,7 +250,7 @@ export const useTaxonomyStore = create<TaxonomyState & TaxonomyActions>()(
 
         // Update data field
         const currentData = nodeWithData.data || {};
-        const updatedData: { displayName?: string; aliases?: string[]; color?: string } = { ...currentData };
+        const updatedData: { displayName?: string; aliases?: string[]; color?: string; recommendedTagIds?: string[] } = { ...currentData };
         
         // Handle displayName: if undefined, don't update; if empty string, delete it; otherwise update
         if (updates.displayName !== undefined) {
@@ -277,8 +279,17 @@ export const useTaxonomyStore = create<TaxonomyState & TaxonomyActions>()(
           }
         }
 
+        // Handle recommendedTagIds: if undefined, don't update; if empty array, delete it; otherwise update
+        if (updates.recommendedTagIds !== undefined) {
+          if (updates.recommendedTagIds.length === 0) {
+            delete updatedData.recommendedTagIds;
+          } else {
+            updatedData.recommendedTagIds = updates.recommendedTagIds;
+          }
+        }
+
         // Only include data field if it has any values
-        if (updatedData.displayName || updatedData.color || (updatedData.aliases && updatedData.aliases.length > 0)) {
+        if (updatedData.displayName || updatedData.color || (updatedData.aliases && updatedData.aliases.length > 0) || (updatedData.recommendedTagIds && updatedData.recommendedTagIds.length > 0)) {
           updatedNode.data = updatedData;
         } else {
           // Remove data field if empty
@@ -401,8 +412,71 @@ export const useTaxonomyStore = create<TaxonomyState & TaxonomyActions>()(
         };
         collectDescendants(nodeId);
 
-        // Filter out all nodes to be removed
-        const updatedNodes = taxonomy.nodes.filter((n) => !nodesToRemove.has(n.id));
+        // Get removed tag IDs for cleanup
+        const removedTagIds = Array.from(nodesToRemove).filter((id) => {
+          const n = index.byId.get(id);
+          return n && n.kind === 'tag';
+        });
+
+        // Clean up references: remove deleted tag IDs from all tag nodes' recommendedTagIds
+        let cleanedReferenceCount = 0;
+        const updatedNodes = taxonomy.nodes.map((n) => {
+          // Skip nodes that will be removed
+          if (nodesToRemove.has(n.id)) {
+            return n;
+          }
+
+          // Only process tag nodes
+          if (n.kind !== 'tag') {
+            return n;
+          }
+
+          // Access data field (may exist in runtime even if not in type definition)
+          const nodeWithData = n as typeof n & {
+            data?: { recommendedTagIds?: string[] };
+          };
+
+          const recommendedTagIds = nodeWithData.data?.recommendedTagIds;
+          if (!Array.isArray(recommendedTagIds) || recommendedTagIds.length === 0) {
+            return n;
+          }
+
+          // Filter out removed tag IDs
+          const originalLength = recommendedTagIds.length;
+          const cleanedRecommendedIds = recommendedTagIds.filter(
+            (id) => !removedTagIds.includes(id)
+          );
+
+          // If nothing changed, return original node
+          if (cleanedRecommendedIds.length === originalLength) {
+            return n;
+          }
+
+          // Count cleaned references
+          cleanedReferenceCount += originalLength - cleanedRecommendedIds.length;
+
+          // Build updated data
+          const updatedData = { ...nodeWithData.data };
+          if (cleanedRecommendedIds.length === 0) {
+            // Remove recommendedTagIds if empty
+            delete updatedData.recommendedTagIds;
+          } else {
+            updatedData.recommendedTagIds = cleanedRecommendedIds;
+          }
+
+          // Build updated node
+          const updatedNode = {
+            ...n,
+            data: Object.keys(updatedData).length > 0 ? updatedData : undefined,
+          };
+
+          // Remove data field if completely empty
+          if (!updatedNode.data || Object.keys(updatedNode.data).length === 0) {
+            delete (updatedNode as any).data;
+          }
+
+          return updatedNode;
+        }).filter((n) => !nodesToRemove.has(n.id));
 
         const updatedTaxonomy: Taxonomy = {
           ...taxonomy,
@@ -413,13 +487,11 @@ export const useTaxonomyStore = create<TaxonomyState & TaxonomyActions>()(
         const newIndex = buildTaxonomyIndex(updatedTaxonomy);
         set({ taxonomy: updatedTaxonomy, index: newIndex });
 
-        // Return removed tag IDs for cleanup (selectedIds)
-        const removedTagIds = Array.from(nodesToRemove).filter((id) => {
-          const n = index.byId.get(id);
-          return n && n.kind === 'tag';
-        });
-
-        return { success: true as const, removedTagIds };
+        return {
+          success: true as const,
+          removedTagIds,
+          cleanedReferenceCount,
+        };
       },
 
       createNode: (kind: 'folder' | 'tag', parentId: NodeId | null, defaultLabel: string) => {

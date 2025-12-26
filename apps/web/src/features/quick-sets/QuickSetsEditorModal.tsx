@@ -14,7 +14,7 @@
  * - Save / Cancel
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   Modal,
   Button,
@@ -245,9 +245,12 @@ export function QuickSetsEditorModal({
   }, [resetDraft, onClose]);
 
   // Reset draft when modal opens
-  const handleModalOpen = useCallback(() => {
-    resetDraft();
-  }, [resetDraft]);
+  // Mantine Modal does not support `onOpen`; drive this from `opened`.
+  useEffect(() => {
+    if (opened) {
+      resetDraft();
+    }
+  }, [opened, resetDraft]);
 
   // ========================================================================
   // Render helpers
@@ -304,7 +307,6 @@ export function QuickSetsEditorModal({
     <Modal
       opened={opened}
       onClose={handleCancel}
-      onOpen={handleModalOpen}
       title={
         <Group gap="xs">
           {selectedTree && (

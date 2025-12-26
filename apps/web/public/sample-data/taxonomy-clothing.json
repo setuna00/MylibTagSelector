@@ -77,8 +77,7 @@
                 { "type": "ref", "refId": "f_deep_cave" },
                 { "type": "ref", "refId": "t_cave" },
                 { "type": "ref", "refId": "t_deep" },
-                { "type": "ref", "refId": "t_lake" },
-                { "type": "ref", "refId": "t_not_exist_should_warn" }
+                { "type": "ref", "refId": "t_lake" }
               ]
             }
           ]
@@ -146,41 +145,41 @@
     { "id": "f_dungeon_zone", "label": "地牢区", "kind": "folder", "parentId": "f_inner", "order": 1 },
     { "id": "f_outer", "label": "外城", "kind": "folder", "parentId": "f_castle", "order": 1 },
 
-    { "id": "t_castle", "label": "城堡", "kind": "tag", "parentId": "f_castle", "order": 0 },
-    { "id": "t_demon_castle", "label": "魔王城", "kind": "tag", "parentId": "f_castle", "order": 1 },
+    { "id": "t_castle", "label": "城堡", "kind": "tag", "parentId": "f_castle", "order": 0, "data": { "recommendedTagIds": ["t_throne", "t_barracks", "t_knight", "t_boss"] } },
+    { "id": "t_demon_castle", "label": "魔王城", "kind": "tag", "parentId": "f_castle", "order": 1, "data": { "recommendedTagIds": ["t_demon_lord", "t_torture", "t_ambush", "t_betrayal"] } },
 
-    { "id": "t_market", "label": "集市", "kind": "tag", "parentId": "f_outer", "order": 0 },
-    { "id": "t_barracks", "label": "兵营", "kind": "tag", "parentId": "f_outer", "order": 1 },
+    { "id": "t_market", "label": "集市", "kind": "tag", "parentId": "f_outer", "order": 0, "data": { "recommendedTagIds": ["t_negotiation", "t_assassin", "t_brawl"] } },
+    { "id": "t_barracks", "label": "兵营", "kind": "tag", "parentId": "f_outer", "order": 1, "data": { "recommendedTagIds": ["t_knight", "t_boss", "t_ambush"] } },
 
-    { "id": "t_throne", "label": "王座", "kind": "tag", "parentId": "f_throne", "order": 0 },
-    { "id": "t_banquet", "label": "宴会", "kind": "tag", "parentId": "f_throne", "order": 1 },
+    { "id": "t_throne", "label": "王座", "kind": "tag", "parentId": "f_throne", "order": 0, "data": { "recommendedTagIds": ["t_banquet", "t_negotiation", "t_knight", "t_betrayal"] } },
+    { "id": "t_banquet", "label": "宴会", "kind": "tag", "parentId": "f_throne", "order": 1, "data": { "recommendedTagIds": ["t_throne", "t_negotiation", "t_knight", "t_betrayal"] } },
 
-    { "id": "t_cell", "label": "牢房", "kind": "tag", "parentId": "f_dungeon_zone", "order": 0 },
-    { "id": "t_torture", "label": "拷问室", "kind": "tag", "parentId": "f_dungeon_zone", "order": 1 },
+    { "id": "t_cell", "label": "牢房", "kind": "tag", "parentId": "f_dungeon_zone", "order": 0, "data": { "recommendedTagIds": ["t_torture", "t_demon_lord", "t_assassin"] } },
+    { "id": "t_torture", "label": "拷问室", "kind": "tag", "parentId": "f_dungeon_zone", "order": 1, "data": { "recommendedTagIds": ["t_cell", "t_demon_lord", "t_assassin", "t_betrayal"] } },
 
     { "id": "f_tavern", "label": "酒馆", "kind": "folder", "parentId": "f_loc", "order": 1 },
-    { "id": "t_tavern", "label": "酒馆", "kind": "tag", "parentId": "f_tavern", "order": 0 },
-    { "id": "t_bar", "label": "吧台", "kind": "tag", "parentId": "f_tavern", "order": 1 },
-    { "id": "t_brawl", "label": "斗殴", "kind": "tag", "parentId": "f_tavern", "order": 2 },
+    { "id": "t_tavern", "label": "酒馆", "kind": "tag", "parentId": "f_tavern", "order": 0, "data": { "recommendedTagIds": ["t_bar", "t_brawl", "t_negotiation", "t_assassin"] } },
+    { "id": "t_bar", "label": "吧台", "kind": "tag", "parentId": "f_tavern", "order": 1, "data": { "recommendedTagIds": ["t_tavern", "t_negotiation", "t_brawl"] } },
+    { "id": "t_brawl", "label": "斗殴", "kind": "tag", "parentId": "f_tavern", "order": 2, "data": { "recommendedTagIds": ["t_tavern", "t_bar", "t_ambush", "t_assassin"] } },
 
     { "id": "f_cave", "label": "洞穴", "kind": "folder", "parentId": "f_loc", "order": 2 },
     { "id": "f_deep_cave", "label": "深处", "kind": "folder", "parentId": "f_cave", "order": 0 },
-    { "id": "t_cave", "label": "洞穴", "kind": "tag", "parentId": "f_cave", "order": 0 },
-    { "id": "t_deep", "label": "幽深", "kind": "tag", "parentId": "f_deep_cave", "order": 0 },
-    { "id": "t_lake", "label": "地下湖", "kind": "tag", "parentId": "f_deep_cave", "order": 1 },
+    { "id": "t_cave", "label": "洞穴", "kind": "tag", "parentId": "f_cave", "order": 0, "data": { "recommendedTagIds": ["t_deep", "t_ambush", "t_assassin", "t_lake"] } },
+    { "id": "t_deep", "label": "幽深", "kind": "tag", "parentId": "f_deep_cave", "order": 0, "data": { "recommendedTagIds": ["t_cave", "t_lake", "t_ambush", "t_boss"] } },
+    { "id": "t_lake", "label": "地下湖", "kind": "tag", "parentId": "f_deep_cave", "order": 1, "data": { "recommendedTagIds": ["t_deep", "t_cave", "t_ambush"] } },
 
     { "id": "f_hero", "label": "主角阵营", "kind": "folder", "parentId": "f_char", "order": 0 },
     { "id": "f_villain", "label": "反派阵营", "kind": "folder", "parentId": "f_char", "order": 1 },
-    { "id": "t_knight", "label": "骑士", "kind": "tag", "parentId": "f_hero", "order": 0 },
-    { "id": "t_mage", "label": "法师", "kind": "tag", "parentId": "f_hero", "order": 1 },
-    { "id": "t_demon_lord", "label": "魔王", "kind": "tag", "parentId": "f_villain", "order": 0 },
-    { "id": "t_assassin", "label": "刺客", "kind": "tag", "parentId": "f_villain", "order": 1 },
+    { "id": "t_knight", "label": "骑士", "kind": "tag", "parentId": "f_hero", "order": 0, "data": { "recommendedTagIds": ["t_throne", "t_boss", "t_negotiation", "t_barracks"] } },
+    { "id": "t_mage", "label": "法师", "kind": "tag", "parentId": "f_hero", "order": 1, "data": { "recommendedTagIds": ["t_castle", "t_cave", "t_boss", "t_negotiation"] } },
+    { "id": "t_demon_lord", "label": "魔王", "kind": "tag", "parentId": "f_villain", "order": 0, "data": { "recommendedTagIds": ["t_demon_castle", "t_throne", "t_boss", "t_betrayal"] } },
+    { "id": "t_assassin", "label": "刺客", "kind": "tag", "parentId": "f_villain", "order": 1, "data": { "recommendedTagIds": ["t_ambush", "t_tavern", "t_cave", "t_betrayal"] } },
 
     { "id": "f_combat", "label": "战斗", "kind": "folder", "parentId": "f_event", "order": 0 },
     { "id": "f_social", "label": "社交", "kind": "folder", "parentId": "f_event", "order": 1 },
-    { "id": "t_boss", "label": "首领战", "kind": "tag", "parentId": "f_combat", "order": 0 },
-    { "id": "t_ambush", "label": "伏击", "kind": "tag", "parentId": "f_combat", "order": 1 },
-    { "id": "t_negotiation", "label": "谈判", "kind": "tag", "parentId": "f_social", "order": 0 },
-    { "id": "t_betrayal", "label": "背叛", "kind": "tag", "parentId": "f_social", "order": 1 }
+    { "id": "t_boss", "label": "首领战", "kind": "tag", "parentId": "f_combat", "order": 0, "data": { "recommendedTagIds": ["t_knight", "t_demon_lord", "t_castle", "t_cave"] } },
+    { "id": "t_ambush", "label": "伏击", "kind": "tag", "parentId": "f_combat", "order": 1, "data": { "recommendedTagIds": ["t_assassin", "t_cave", "t_deep", "t_betrayal"] } },
+    { "id": "t_negotiation", "label": "谈判", "kind": "tag", "parentId": "f_social", "order": 0, "data": { "recommendedTagIds": ["t_tavern", "t_throne", "t_banquet", "t_knight"] } },
+    { "id": "t_betrayal", "label": "背叛", "kind": "tag", "parentId": "f_social", "order": 1, "data": { "recommendedTagIds": ["t_assassin", "t_demon_lord", "t_throne", "t_ambush"] } }
   ]
 }

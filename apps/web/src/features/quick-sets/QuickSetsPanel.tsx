@@ -25,6 +25,9 @@ import { useQuickSetEditSession } from './quicksetEditSession';
 import { useSettingsStore } from '../../store';
 import styles from './QuickSetsPanel.module.css';
 
+// Avoid spamming console with the same invalid-ref warning on every render.
+const warnedInvalidRefIds = new Set<string>();
+
 interface QuickSetsPanelProps {
   quickTrees: QuickTree[];
   taxonomy: Taxonomy;
@@ -103,9 +106,13 @@ function QuickTreeNodeRenderer({
   // type === 'ref'
   const refNode = index.byId.get(node.refId);
   if (!refNode) {
-    console.warn(
-      `[QuickSetsPanel] Invalid ref: refId "${node.refId}" not found in taxonomy. Skipping.`
-    );
+    const refId = String(node.refId);
+    if (!warnedInvalidRefIds.has(refId)) {
+      warnedInvalidRefIds.add(refId);
+      console.warn(
+        `[QuickSetsPanel] Invalid ref: refId "${refId}" not found in taxonomy. Skipping.`
+      );
+    }
     return null;
   }
 

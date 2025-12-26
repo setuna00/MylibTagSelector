@@ -5,11 +5,15 @@
  * Opens when clicking a tag in editing mode.
  */
 
-import { useState, useEffect } from 'react';
-import { Drawer, Button, Group, TextInput, Stack, Text, ColorInput, Badge, UnstyledButton } from '@mantine/core';
+import { useState, useEffect, useMemo } from 'react';
+import { Drawer, Button, Group, TextInput, Stack, Text, ColorInput, Badge, UnstyledButton, Autocomplete, ActionIcon } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
+import { X } from 'lucide-react';
 import type { NodeId, TaxonomyIndex, TagNode } from '@tagselector/tag-core';
+import { getRecommendedTagIds } from '@tagselector/tag-core';
 import { useTaxonomyStore, useSettingsStore } from '../../store';
 import { getTagColorHex } from '../../utils/tagColor';
+import { getTagDisplayLabel, nodeMatchesQuery } from '../../utils/searchMatch';
 
 interface TagEditDrawerProps {
   opened: boolean;
@@ -44,6 +48,10 @@ export function TagEditDrawer({
   const [displayName, setDisplayName] = useState('');
   const [color, setColor] = useState('');
   const [aliasesText, setAliasesText] = useState('');
+  const [recommendedTagIds, setRecommendedTagIds] = useState<string[]>([]);
+  const [autocompleteValue, setAutocompleteValue] = useState('');
+  
+  // Constant empty array to ensure it's always iterable
 
   // Get current tag data when drawer opens or tagId changes
   useEffect(() => {
@@ -54,11 +62,13 @@ export function TagEditDrawer({
         
         // Get data fields
         const nodeWithData = node as TagNode & {
-          data?: { displayName?: string; aliases?: string[]; color?: string };
+          data?: { displayName?: string; aliases?: string[]; color?: string; recommendedTagIds?: string[] };
         };
         setDisplayName(nodeWithData.data?.displayName || '');
         setColor(nodeWithData.data?.color || '');
         setAliasesText((nodeWithData.data?.aliases || []).join(', '));
+        setRecommendedTagIds(getRecommendedTagIds(node));
+        setAutocompleteValue('');
       }
     }
   }, [opened, tagId, index]);
@@ -88,6 +98,7 @@ export function TagEditDrawer({
       displayName: displayName.trim(),
       color: color.trim(),
       aliases: dedupedAliases,
+      recommendedTagIds: recommendedTagIds,
     });
 
     onClose();
@@ -101,6 +112,110 @@ export function TagEditDrawer({
     setColor(presetColor);
   };
 
+  // Get all tag nodes for autocomplete (exclude current tag and already recommended tags)
+  const availableTags = useMemo(() => {
+    const tags: TagNode[] = [];
+    if (!index || !index.byId) {
+      return tags;
+    }
+    for (const node of index.byId.values()) {
+      if (node.kind === 'tag' && node.id !== tagId && !recommendedTagIds.includes(node.id)) {
+        tags.push(node);
+      }
+    }
+    return tags;
+  }, [index, tagId, recommendedTagIds]);
+
+  // Autocomplete suggestions based on query
+  const autocompleteSuggestions = useMemo(() => {
+    if (!autocompleteValue || !autocompleteValue.trim()) {
+      return [];
+    }
+    if (!Array.isArray(availableTags)) {
+      return [];
+    }
+    return availableTags
+      .filter(tag => nodeMatchesQuery(tag, autocompleteValue))
+      .slice(0, 10) // Limit to 10 suggestions
+      .map(tag => ({
+        value: getTagDisplayLabel(tag),
+        tagId: tag.id,
+      }));
+  }, [availableTags, autocompleteValue]);
+
+  // Autocomplete data - compute directly from autocompleteSuggestions
+  // Use useMemo to ensure it's always an array and computed synchronously
+  const autocompleteData = useMemo((): string[] => {
+    if (!autocompleteSuggestions || !Array.isArray(autocompleteSuggestions)) {
+      return [];
+    }
+    try {
+      const result = autocompleteSuggestions
+        .map(s => {
+          if (!s || typeof s !== 'object' || !('value' in s)) {
+            return '';
+          }
+          return String(s.value || '');
+        })
+        .filter((v): v is string => typeof v === 'string' && v.length > 0);
+      return result;
+    } catch (error) {
+      return [];
+    }
+  }, [autocompleteSuggestions]);
+
+  // Handle adding a recommended tag
+  const handleAddRecommendedTag = (tagIdToAdd: string) => {
+    if (!tagId) return;
+    if (tagIdToAdd === tagId) {
+      // Don't allow recommending self
+      return;
+    }
+    if (recommendedTagIds.includes(tagIdToAdd)) {
+      // Don't allow duplicates
+      return;
+    }
+    setRecommendedTagIds([...recommendedTagIds, tagIdToAdd]);
+    setAutocompleteValue('');
+  };
+
+  // Handle removing a recommended tag
+  const handleRemoveRecommendedTag = (tagIdToRemove: string) => {
+    setRecommendedTagIds(recommendedTagIds.filter(id => id !== tagIdToRemove));
+  };
+
+  // Handle autocomplete selection
+  const handleAutocompleteSelect = (selectedLabel: string) => {
+    const suggestion = autocompleteSuggestions.find(s => s.value === selectedLabel);
+    if (suggestion) {
+      handleAddRecommendedTag(suggestion.tagId);
+    }
+  };
+
+  // Handle Enter key in autocomplete
+  const handleAutocompleteKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && autocompleteValue.trim()) {
+      e.preventDefault();
+      // Try to find exact match
+      const suggestion = autocompleteSuggestions.find(s => 
+        s.value.toLowerCase() === autocompleteValue.trim().toLowerCase()
+      );
+      if (suggestion) {
+        handleAddRecommendedTag(suggestion.tagId);
+      } else if (autocompleteSuggestions.length > 0) {
+        // Use first suggestion if available
+        handleAddRecommendedTag(autocompleteSuggestions[0].tagId);
+      } else {
+        // No match found - show light notification
+        notifications.show({
+          message: uiLanguage === 'zh' ? '未找到匹配的标签' : 'No matching tag found',
+          color: 'gray',
+          autoClose: 2000,
+        });
+      }
+    }
+  };
+
   const i18n = {
     title: uiLanguage === 'zh' ? '编辑标签' : 'Edit Tag',
     primaryName: uiLanguage === 'zh' ? '主名称 (EN)' : 'Primary Name (EN)',
@@ -112,11 +227,14 @@ export function TagEditDrawer({
     aliases: uiLanguage === 'zh' ? '别名' : 'Aliases',
     aliasesPlaceholder: uiLanguage === 'zh' ? '用逗号分隔，例如: aaa, bbb, ccc' : 'Comma-separated, e.g., aaa, bbb, ccc',
     aliasesHint: uiLanguage === 'zh' ? '用于搜索匹配，不导出' : 'For search matching, not exported',
+    recommendedTags: uiLanguage === 'zh' ? '推荐标签' : 'Recommended Tags',
+    recommendedTagsPlaceholder: uiLanguage === 'zh' ? '输入标签名称搜索...' : 'Type to search tags...',
+    recommendedTagsHint: uiLanguage === 'zh' ? '选择其他标签作为推荐' : 'Select other tags as recommendations',
     cancel: uiLanguage === 'zh' ? '取消' : 'Cancel',
     save: uiLanguage === 'zh' ? '保存' : 'Save',
   };
 
-  if (!tagId) {
+  if (!tagId || !opened) {
     return null;
   }
 
@@ -124,6 +242,9 @@ export function TagEditDrawer({
   if (!node || node.kind !== 'tag') {
     return null;
   }
+
+  // Ensure autocompleteData is always a valid array before rendering
+  // Use useMemo to ensure stable reference and always return an array
 
   return (
     <Drawer
@@ -202,6 +323,61 @@ export function TagEditDrawer({
           <Text size="xs" c="dimmed" mt="xs">
             {i18n.aliasesHint}
           </Text>
+        </div>
+
+        {/* Recommended Tags */}
+        <div>
+          <Text size="sm" fw={500} mb="xs">
+            {i18n.recommendedTags}
+          </Text>
+          <Stack gap="xs">
+            {/* Display existing recommended tags as chips */}
+            {recommendedTagIds.length > 0 && (
+              <Group gap="xs" style={{ flexWrap: 'wrap' }}>
+                {recommendedTagIds.map((recommendedId) => {
+                  const recommendedNode = index.byId.get(recommendedId);
+                  if (!recommendedNode) return null;
+                  const displayLabel = getTagDisplayLabel(recommendedNode);
+                  return (
+                    <Badge
+                      key={recommendedId}
+                      variant="light"
+                      rightSection={
+                        <ActionIcon
+                          size="xs"
+                          color="blue"
+                          radius="xl"
+                          variant="transparent"
+                          onClick={() => handleRemoveRecommendedTag(recommendedId)}
+                          style={{ marginLeft: 4 }}
+                        >
+                          <X size={12} />
+                        </ActionIcon>
+                      }
+                    >
+                      {displayLabel}
+                    </Badge>
+                  );
+                })}
+              </Group>
+            )}
+            {/* Autocomplete input */}
+            <Autocomplete
+              value={autocompleteValue || ''}
+              onChange={setAutocompleteValue}
+              onOptionSubmit={handleAutocompleteSelect}
+              onKeyDown={handleAutocompleteKeyDown}
+              placeholder={i18n.recommendedTagsPlaceholder}
+              // Mantine Autocomplete expects `filter` to return an array of options (not a boolean).
+              // We already pre-filter via `nodeMatchesQuery`, so we simply return options unchanged.
+              data={Array.isArray(autocompleteData) ? autocompleteData : []}
+              filter={({ options }) => options}
+              limit={10}
+            />
+            <Text size="xs" c="dimmed">
+              {i18n.recommendedTagsHint}
+            </Text>
+          </Stack>
         </div>
 
         {/* Action buttons */}
