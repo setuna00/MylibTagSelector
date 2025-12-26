@@ -1,0 +1,24 @@
+/* Minimal reset for Mantine app */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--mantine-color-gray-0);
+  color: var(--mantine-color-text);
+}
+
+/* Tag badge 统一放大 30% */
+.tag-badge {
+  /* 读取 Mantine Badge size="lg" 的默认值并放大 30% */
+  /* Mantine v7 Badge lg 默认值：font-size: 0.875rem, height: 1.875rem, padding-x: 0.75rem */
+  font-size: calc(0.875rem * 1.3); /* 约 1.1375rem (18.2px) */
+  height: calc(1.875rem * 1.3); /* 约 2.4375rem (39px) */
+  padding-inline: calc(0.75rem * 1.3); /* 约 0.975rem (15.6px) */
+  /* 保持 padding-y 不变，让 Mantine 控制垂直对齐 */
+  /* 确保 line-height 匹配，避免文字垂直偏移 */
+  line-height: calc(1.875rem * 1.3);
+}

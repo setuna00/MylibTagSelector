@@ -1,0 +1,18 @@
+.container {
+  /* Header container */
+}
+
+.breadcrumbs {
+  flex: 1;
+  overflow: hidden;
+}
+
+.breadcrumbLink {
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.breadcrumbLink:hover {
+  text-decoration: underline;
+}
+

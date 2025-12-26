@@ -1,0 +1,62 @@
+/* Compact horizontal bar layout for recommendations */
+.compactBar {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-sm);
+  padding: var(--mantine-spacing-sm) var(--mantine-spacing-sm);
+  background: var(--mantine-color-teal-0);
+  border-radius: var(--mantine-radius-sm);
+  border: 1px solid var(--mantine-color-teal-2);
+  flex-shrink: 0;
+}
+
+.barHeader {
+  flex-shrink: 0;
+}
+
+.sparkleIcon {
+  color: var(--mantine-color-teal-6);
+}
+
+.chipsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mantine-spacing-xs);
+  flex: 1;
+  min-width: 0;
+}
+
+.chip {
+  cursor: pointer;
+  transition: transform 100ms ease, box-shadow 100ms ease;
+}
+
+.chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Legacy styles for backward compatibility */
+.container {
+  min-width: 200px;
+  max-width: 360px;
+  height: fit-content;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-xs);
+}
+
+.empty {
+  text-align: center;
+  padding: var(--mantine-spacing-md) 0;
+}
+
+.chipGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mantine-spacing-xs);
+}
+

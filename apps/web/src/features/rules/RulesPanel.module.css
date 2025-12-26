@@ -1,0 +1,147 @@
+/* RulesPanel.module.css */
+
+/* Panel container - side panel that squeezes picker */
+.panelContainer {
+  width: 300px;
+  min-width: 300px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: var(--mantine-spacing-sm);
+  background: var(--mantine-color-body);
+  border-left: 1px solid var(--mantine-color-gray-3);
+  overflow: hidden;
+  position: relative;
+}
+
+.panelHeader {
+  flex-shrink: 0;
+}
+
+.editModeIndicator {
+  flex-shrink: 0;
+  background: var(--mantine-color-blue-0);
+  border: 1px solid var(--mantine-color-blue-3);
+}
+
+.rulesList {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.panelFooter {
+  flex-shrink: 0;
+  padding-top: var(--mantine-spacing-sm);
+  border-top: 1px solid var(--mantine-color-gray-2);
+}
+
+/* Error Alert */
+.errorAlert {
+  flex-shrink: 0;
+  margin-bottom: var(--mantine-spacing-sm);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.errorItem {
+  padding: 4px 0;
+  border-bottom: 1px solid var(--mantine-color-red-2);
+}
+
+.errorItem:last-child {
+  border-bottom: none;
+}
+
+/* Rule Item Styles */
+.ruleItem {
+  transition: border-color 0.15s ease;
+}
+
+.ruleItem:hover {
+  border-color: var(--mantine-color-blue-4);
+}
+
+.ruleItemError {
+  border-color: var(--mantine-color-red-5) !important;
+  background-color: var(--mantine-color-red-0);
+}
+
+.ruleHeader {
+  min-height: 28px;
+}
+
+.ruleName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ruleName:hover {
+  text-decoration: underline;
+}
+
+.nameInput {
+  flex: 1;
+  min-width: 0;
+}
+
+.summary {
+  flex-shrink: 0;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ruleContent {
+  padding-left: var(--mantine-spacing-md);
+  border-left: 2px solid var(--mantine-color-gray-2);
+}
+
+/* Trigger Section */
+.triggerSection {
+  padding: var(--mantine-spacing-xs);
+  background: var(--mantine-color-gray-0);
+  border-radius: var(--mantine-radius-sm);
+}
+
+/* Type Section */
+.typeSection {
+  padding: var(--mantine-spacing-xs) 0;
+}
+
+/* Targets Section */
+.targetsSection {
+  padding: var(--mantine-spacing-xs);
+  background: var(--mantine-color-gray-0);
+  border-radius: var(--mantine-radius-sm);
+}
+
+.targetsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* Confirmation Dialog Overlay */
+.confirmOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.confirmDialog {
+  width: 90%;
+  max-width: 280px;
+}

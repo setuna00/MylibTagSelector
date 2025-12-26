@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.3.1",
+  "meta": { "name": "Order Collision Test" },
+  "nodes": [
+    { "id": "group-a", "label": "GroupA", "parentId": null, "kind": "folder", "order": 0 },
+    { "id": "a1", "label": "A1", "parentId": "group-a", "kind": "tag", "order": 0 },
+    { "id": "a2", "label": "A2", "parentId": "group-a", "kind": "tag", "order": 1 },
+    { "id": "group-b", "label": "GroupB", "parentId": null, "kind": "folder", "order": 0 },
+    { "id": "b1", "label": "B1", "parentId": "group-b", "kind": "tag", "order": 0 },
+    { "id": "b2", "label": "B2", "parentId": "group-b", "kind": "tag", "order": 1 },
+
+    { "id": "root", "label": "Root", "parentId": null, "kind": "folder", "order": 1 },
+    { "id": "c1", "label": "C1", "parentId": "root", "kind": "folder", "order": 0 },
+    { "id": "c1-t", "label": "T1", "parentId": "c1", "kind": "tag", "order": 0 },
+    { "id": "c2", "label": "C2", "parentId": "root", "kind": "folder", "order": 0 },
+    { "id": "c2-t", "label": "T2", "parentId": "c2", "kind": "tag", "order": 0 }
+  ]
+}
+

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear TagSelector Storage</title>
+</head>
+<body>
+    <h1>Clear TagSelector LocalStorage</h1>
+    <button onclick="clearStorage()">Clear Storage</button>
+    <div id="result"></div>
+    
+    <script>
+        function clearStorage() {
+            try {
+                localStorage.removeItem('tagselector-taxonomy');
+                localStorage.removeItem('tagselector-selection');
+                document.getElementById('result').innerHTML = '<p style="color: green;">Storage cleared successfully! Please refresh your app.</p>';
+            } catch (e) {
+                document.getElementById('result').innerHTML = '<p style="color: red;">Error: ' + e.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>
+

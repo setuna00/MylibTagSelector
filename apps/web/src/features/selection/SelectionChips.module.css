@@ -1,0 +1,32 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-sm);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 600;
+  color: var(--mantine-color-dimmed);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mantine-spacing-xs);
+}
+
+.empty {
+  padding: var(--mantine-spacing-md);
+  text-align: center;
+  color: var(--mantine-color-dimmed);
+  font-style: italic;
+  font-size: var(--mantine-font-size-sm);
+}
+

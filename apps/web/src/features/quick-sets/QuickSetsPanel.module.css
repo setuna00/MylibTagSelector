@@ -1,0 +1,55 @@
+.container {
+  /* Quick Sets panel container */
+}
+
+.starIcon {
+  color: var(--mantine-color-yellow-6);
+}
+
+.setGroup {
+  /* Individual set container */
+}
+
+.setHeader {
+  cursor: pointer;
+  user-select: none;
+  padding: var(--mantine-spacing-xs) 0;
+}
+
+.setHeader:hover {
+  opacity: 0.8;
+}
+
+.itemsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mantine-spacing-sm);
+  padding: var(--mantine-spacing-xs) 0;
+  padding-left: var(--mantine-spacing-md);
+}
+
+.itemBadge {
+  cursor: pointer;
+  transition: transform 100ms ease, box-shadow 100ms ease;
+}
+
+.itemBadge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Legacy styles */
+.header {
+  cursor: pointer;
+  user-select: none;
+}
+
+.header:hover {
+  opacity: 0.8;
+}
+
+.pinnedButton {
+  justify-content: flex-start;
+  width: 100%;
+}
+

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1.3.1",
+  "meta": { "name": "Determinism Label Test" },
+  "nodes": [
+    { "id": "n1", "label": "apple", "parentId": null, "kind": "tag", "order": 0 },
+    { "id": "n2", "label": "Apple", "parentId": null, "kind": "tag", "order": 0 },
+    { "id": "n3", "label": "APPLE", "parentId": null, "kind": "tag", "order": 0 },
+    { "id": "n4", "label": "中文", "parentId": null, "kind": "tag", "order": 0 },
+    { "id": "n5", "label": "日本語", "parentId": null, "kind": "tag", "order": 0 },
+    { "id": "n6", "label": "123", "parentId": null, "kind": "tag", "order": 0 },
+    { "id": "n7", "label": "12", "parentId": null, "kind": "tag", "order": 0 },
+    { "id": "n8", "label": "1A", "parentId": null, "kind": "tag", "order": 0 }
+  ]
+}
+

@@ -1,0 +1,186 @@
+{
+  "schemaVersion": "1.3.1",
+  "meta": {
+    "name": "TEST - Project Pack Full Coverage",
+    "extensions": {
+      "rules": {
+        "version": 1,
+        "savedRules": [
+          {
+            "id": "r_demon_requires_castle",
+            "name": "魔王 -> 必有 魔王城",
+            "triggerTagId": "t_demon_lord",
+            "type": "REQUIRES",
+            "targetTagIds": ["t_demon_castle"]
+          },
+          {
+            "id": "r_banquet_excludes_torture",
+            "name": "宴会 -> 排除 拷问室",
+            "triggerTagId": "t_banquet",
+            "type": "EXCLUDES",
+            "targetTagIds": ["t_torture"]
+          },
+          {
+            "id": "r_tavern_requires_bar",
+            "name": "酒馆 -> 必有 吧台",
+            "triggerTagId": "t_tavern",
+            "type": "REQUIRES",
+            "targetTagIds": ["t_bar"]
+          },
+          {
+            "id": "r_assassin_excludes_knight",
+            "name": "刺客 -> 排除 骑士",
+            "triggerTagId": "t_assassin",
+            "type": "EXCLUDES",
+            "targetTagIds": ["t_knight"]
+          }
+        ]
+      },
+      "quickTrees": [
+        {
+          "id": "qt_scene",
+          "name": "快捷分类：场景快速选择",
+          "roots": [
+            {
+              "type": "group",
+              "id": "g_castle",
+              "label": "城堡一键",
+              "children": [
+                { "type": "ref", "refId": "f_castle" },
+                { "type": "ref", "refId": "f_inner" },
+                { "type": "ref", "refId": "f_throne" },
+                { "type": "ref", "refId": "t_castle" },
+                { "type": "ref", "refId": "t_demon_castle" },
+                { "type": "ref", "refId": "t_throne" },
+                { "type": "ref", "refId": "t_banquet" },
+                { "type": "ref", "refId": "t_cell" }
+              ]
+            },
+            {
+              "type": "group",
+              "id": "g_tavern",
+              "label": "酒馆一键",
+              "children": [
+                { "type": "ref", "refId": "f_tavern" },
+                { "type": "ref", "refId": "t_tavern" },
+                { "type": "ref", "refId": "t_bar" },
+                { "type": "ref", "refId": "t_brawl" },
+                { "type": "ref", "refId": "t_negotiation" }
+              ]
+            },
+            {
+              "type": "group",
+              "id": "g_cave",
+              "label": "洞穴一键",
+              "children": [
+                { "type": "ref", "refId": "f_cave" },
+                { "type": "ref", "refId": "f_deep_cave" },
+                { "type": "ref", "refId": "t_cave" },
+                { "type": "ref", "refId": "t_deep" },
+                { "type": "ref", "refId": "t_lake" },
+                { "type": "ref", "refId": "t_not_exist_should_warn" }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "qt_role_event",
+          "name": "快捷分类：角色与事件",
+          "roots": [
+            {
+              "type": "group",
+              "id": "g_roles",
+              "label": "角色",
+              "children": [
+                { "type": "ref", "refId": "t_knight" },
+                { "type": "ref", "refId": "t_mage" },
+                { "type": "ref", "refId": "t_demon_lord" },
+                { "type": "ref", "refId": "t_assassin" }
+              ]
+            },
+            {
+              "type": "group",
+              "id": "g_events",
+              "label": "事件",
+              "children": [
+                { "type": "ref", "refId": "t_boss" },
+                { "type": "ref", "refId": "t_ambush" },
+                { "type": "ref", "refId": "t_negotiation" },
+                { "type": "ref", "refId": "t_betrayal" }
+              ]
+            }
+          ]
+        }
+      ],
+      "recommendations": {
+        "version": 1,
+        "historySize": 3,
+        "limit": 12,
+        "map": {
+          "t_castle": ["t_throne", "t_barracks", "t_market", "t_boss", "t_missing_should_skip"],
+          "t_tavern": ["t_brawl", "t_negotiation", "t_assassin"],
+          "t_cave": ["t_deep", "t_ambush", "t_assassin"],
+          "t_knight": ["t_boss", "t_throne", "t_negotiation", "t_betrayal"]
+        }
+      },
+      "ui": {
+        "version": 1,
+        "folderNavigator": {
+          "version": 1,
+          "mode": "auto",
+          "autoOpenFolderIds": ["f_inner", "f_throne", "f_deep_cave"]
+        }
+      }
+    }
+  },
+  "nodes": [
+    { "id": "f_world", "label": "世界设定", "kind": "folder", "parentId": null, "order": 0 },
+    { "id": "f_char", "label": "角色", "kind": "folder", "parentId": null, "order": 1 },
+    { "id": "f_event", "label": "事件", "kind": "folder", "parentId": null, "order": 2 },
+
+    { "id": "f_loc", "label": "地点", "kind": "folder", "parentId": "f_world", "order": 0 },
+
+    { "id": "f_castle", "label": "城堡", "kind": "folder", "parentId": "f_loc", "order": 0 },
+    { "id": "f_inner", "label": "内城", "kind": "folder", "parentId": "f_castle", "order": 0 },
+    { "id": "f_throne", "label": "王座厅", "kind": "folder", "parentId": "f_inner", "order": 0 },
+    { "id": "f_dungeon_zone", "label": "地牢区", "kind": "folder", "parentId": "f_inner", "order": 1 },
+    { "id": "f_outer", "label": "外城", "kind": "folder", "parentId": "f_castle", "order": 1 },
+
+    { "id": "t_castle", "label": "城堡", "kind": "tag", "parentId": "f_castle", "order": 0 },
+    { "id": "t_demon_castle", "label": "魔王城", "kind": "tag", "parentId": "f_castle", "order": 1 },
+
+    { "id": "t_market", "label": "集市", "kind": "tag", "parentId": "f_outer", "order": 0 },
+    { "id": "t_barracks", "label": "兵营", "kind": "tag", "parentId": "f_outer", "order": 1 },
+
+    { "id": "t_throne", "label": "王座", "kind": "tag", "parentId": "f_throne", "order": 0 },
+    { "id": "t_banquet", "label": "宴会", "kind": "tag", "parentId": "f_throne", "order": 1 },
+
+    { "id": "t_cell", "label": "牢房", "kind": "tag", "parentId": "f_dungeon_zone", "order": 0 },
+    { "id": "t_torture", "label": "拷问室", "kind": "tag", "parentId": "f_dungeon_zone", "order": 1 },
+
+    { "id": "f_tavern", "label": "酒馆", "kind": "folder", "parentId": "f_loc", "order": 1 },
+    { "id": "t_tavern", "label": "酒馆", "kind": "tag", "parentId": "f_tavern", "order": 0 },
+    { "id": "t_bar", "label": "吧台", "kind": "tag", "parentId": "f_tavern", "order": 1 },
+    { "id": "t_brawl", "label": "斗殴", "kind": "tag", "parentId": "f_tavern", "order": 2 },
+
+    { "id": "f_cave", "label": "洞穴", "kind": "folder", "parentId": "f_loc", "order": 2 },
+    { "id": "f_deep_cave", "label": "深处", "kind": "folder", "parentId": "f_cave", "order": 0 },
+    { "id": "t_cave", "label": "洞穴", "kind": "tag", "parentId": "f_cave", "order": 0 },
+    { "id": "t_deep", "label": "幽深", "kind": "tag", "parentId": "f_deep_cave", "order": 0 },
+    { "id": "t_lake", "label": "地下湖", "kind": "tag", "parentId": "f_deep_cave", "order": 1 },
+
+    { "id": "f_hero", "label": "主角阵营", "kind": "folder", "parentId": "f_char", "order": 0 },
+    { "id": "f_villain", "label": "反派阵营", "kind": "folder", "parentId": "f_char", "order": 1 },
+    { "id": "t_knight", "label": "骑士", "kind": "tag", "parentId": "f_hero", "order": 0 },
+    { "id": "t_mage", "label": "法师", "kind": "tag", "parentId": "f_hero", "order": 1 },
+    { "id": "t_demon_lord", "label": "魔王", "kind": "tag", "parentId": "f_villain", "order": 0 },
+    { "id": "t_assassin", "label": "刺客", "kind": "tag", "parentId": "f_villain", "order": 1 },
+
+    { "id": "f_combat", "label": "战斗", "kind": "folder", "parentId": "f_event", "order": 0 },
+    { "id": "f_social", "label": "社交", "kind": "folder", "parentId": "f_event", "order": 1 },
+    { "id": "t_boss", "label": "首领战", "kind": "tag", "parentId": "f_combat", "order": 0 },
+    { "id": "t_ambush", "label": "伏击", "kind": "tag", "parentId": "f_combat", "order": 1 },
+    { "id": "t_negotiation", "label": "谈判", "kind": "tag", "parentId": "f_social", "order": 0 },
+    { "id": "t_betrayal", "label": "背叛", "kind": "tag", "parentId": "f_social", "order": 1 }
+  ]
+}

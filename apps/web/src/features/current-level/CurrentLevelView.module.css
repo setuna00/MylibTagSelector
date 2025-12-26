@@ -1,0 +1,67 @@
+.container {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--mantine-spacing-xl);
+  min-height: 120px;
+}
+
+.folderGrid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-xs);
+}
+
+.folderCard {
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.folderCard:hover {
+  background: var(--mantine-color-gray-0);
+  border-color: var(--mantine-color-blue-4);
+}
+
+.folderIcon {
+  flex-shrink: 0;
+  color: var(--mantine-color-blue-6);
+}
+
+.folderLabel {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: var(--mantine-color-dimmed);
+}
+
+.tagGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mantine-spacing-xs);
+}
+
+.tagBadge {
+  cursor: pointer;
+  transition: transform 100ms ease, box-shadow 100ms ease;
+}
+
+.tagBadge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tagBadgeHighlight {
+  box-shadow: 0 0 0 2px rgba(250, 176, 5, 0.9);
+  transform: translateY(-1px);
+}
+

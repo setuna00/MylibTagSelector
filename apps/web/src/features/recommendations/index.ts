@@ -1,0 +1,2 @@
+export { RecommendationsPanel } from './RecommendationsPanel';
+

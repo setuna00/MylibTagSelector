@@ -1,0 +1,71 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-sm);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-xs);
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sectionTitle {
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 600;
+  color: var(--mantine-color-dimmed);
+}
+
+.copyButton {
+  flex-shrink: 0;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mantine-spacing-xs);
+}
+
+.chipWrapper {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.autoLabel {
+  font-size: 9px;
+  color: var(--mantine-color-dimmed);
+  font-style: italic;
+}
+
+.outputBox {
+  padding: var(--mantine-spacing-sm);
+  background: var(--mantine-color-body);
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: var(--mantine-radius-sm);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--mantine-font-size-sm);
+  line-height: 1.5;
+  word-break: break-word;
+  min-height: 40px;
+  max-height: 120px;
+  overflow-y: auto; /* Internal scroll for long output */
+}
+
+.outputBox code {
+  color: var(--mantine-color-green-6);
+}
+
+.empty {
+  padding: var(--mantine-spacing-sm);
+  text-align: center;
+  color: var(--mantine-color-dimmed);
+  font-style: italic;
+  font-size: var(--mantine-font-size-sm);
+}

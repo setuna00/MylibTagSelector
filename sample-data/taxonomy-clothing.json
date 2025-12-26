@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "1.3.1",
+  "meta": { "name": "Clothing Tags (日常服饰)" },
+  "nodes": [
+    { "id": "clothing", "label": "衣服", "parentId": null, "kind": "folder", "order": 0 },
+
+    { "id": "upper", "label": "上半身", "parentId": "clothing", "kind": "folder", "order": 0 },
+    
+    { "id": "tops", "label": "上衣", "parentId": "upper", "kind": "folder", "order": 0 },
+    { "id": "tshirt", "label": "T恤", "parentId": "tops", "kind": "tag", "order": 0 },
+    { "id": "shirt", "label": "衬衫", "parentId": "tops", "kind": "tag", "order": 1 },
+    { "id": "hoodie", "label": "卫衣", "parentId": "tops", "kind": "tag", "order": 2 },
+    { "id": "sweater", "label": "针织衫", "parentId": "tops", "kind": "tag", "order": 3 },
+    { "id": "polo", "label": "Polo衫", "parentId": "tops", "kind": "tag", "order": 4 },
+
+    { "id": "outerwear", "label": "外套", "parentId": "upper", "kind": "folder", "order": 1 },
+    { "id": "jacket", "label": "夹克", "parentId": "outerwear", "kind": "tag", "order": 0 },
+    { "id": "trench", "label": "风衣", "parentId": "outerwear", "kind": "tag", "order": 1 },
+    { "id": "down-jacket", "label": "羽绒服", "parentId": "outerwear", "kind": "tag", "order": 2 },
+    { "id": "coat", "label": "大衣", "parentId": "outerwear", "kind": "tag", "order": 3 },
+    { "id": "blazer", "label": "西装外套", "parentId": "outerwear", "kind": "tag", "order": 4 },
+    { "id": "denim-jacket", "label": "牛仔外套", "parentId": "outerwear", "kind": "tag", "order": 5 },
+
+    { "id": "innerwear", "label": "内搭/家居", "parentId": "upper", "kind": "folder", "order": 2 },
+    { "id": "camisole", "label": "吊带背心", "parentId": "innerwear", "kind": "tag", "order": 0 },
+    { "id": "tank-top", "label": "运动背心", "parentId": "innerwear", "kind": "tag", "order": 1 },
+    { "id": "thermal", "label": "保暖衣", "parentId": "innerwear", "kind": "tag", "order": 2 },
+    { "id": "pajamas", "label": "睡衣", "parentId": "innerwear", "kind": "tag", "order": 3 },
+
+    { "id": "lower", "label": "下半身", "parentId": "clothing", "kind": "folder", "order": 1 },
+
+    { "id": "pants", "label": "裤装", "parentId": "lower", "kind": "folder", "order": 0 },
+    { "id": "jeans", "label": "牛仔裤", "parentId": "pants", "kind": "tag", "order": 0 },
+    { "id": "shorts", "label": "短裤", "parentId": "pants", "kind": "tag", "order": 1 },
+    { "id": "sweatpants", "label": "运动裤", "parentId": "pants", "kind": "tag", "order": 2 },
+    { "id": "trousers", "label": "休闲长裤", "parentId": "pants", "kind": "tag", "order": 3 },
+    { "id": "slacks", "label": "西裤", "parentId": "pants", "kind": "tag", "order": 4 },
+    { "id": "overalls", "label": "背带裤", "parentId": "pants", "kind": "tag", "order": 5 },
+
+    { "id": "skirts", "label": "裙装", "parentId": "lower", "kind": "folder", "order": 1 },
+    { "id": "mini-skirt", "label": "短裙", "parentId": "skirts", "kind": "tag", "order": 0 },
+    { "id": "midi-skirt", "label": "中长裙", "parentId": "skirts", "kind": "tag", "order": 1 },
+    { "id": "maxi-skirt", "label": "长裙", "parentId": "skirts", "kind": "tag", "order": 2 },
+    { "id": "pleated-skirt", "label": "百褶裙", "parentId": "skirts", "kind": "tag", "order": 3 },
+    { "id": "a-line", "label": "A字裙", "parentId": "skirts", "kind": "tag", "order": 4 },
+
+    { "id": "hosiery", "label": "袜类", "parentId": "lower", "kind": "folder", "order": 2 },
+    { "id": "ankle-socks", "label": "短袜", "parentId": "hosiery", "kind": "tag", "order": 0 },
+    { "id": "crew-socks", "label": "中筒袜", "parentId": "hosiery", "kind": "tag", "order": 1 },
+    { "id": "knee-high", "label": "及膝袜", "parentId": "hosiery", "kind": "tag", "order": 2 },
+    { "id": "tights", "label": "连裤袜/打底裤", "parentId": "hosiery", "kind": "tag", "order": 3 },
+
+    { "id": "onepiece", "label": "连身装", "parentId": "clothing", "kind": "folder", "order": 2 },
+    { "id": "dress", "label": "连衣裙", "parentId": "onepiece", "kind": "tag", "order": 0 },
+    { "id": "sundress", "label": "背心裙", "parentId": "onepiece", "kind": "tag", "order": 1 },
+    { "id": "jumpsuit", "label": "连体裤", "parentId": "onepiece", "kind": "tag", "order": 2 },
+    { "id": "traditional", "label": "传统服饰(旗袍/汉服)", "parentId": "onepiece", "kind": "tag", "order": 3 },
+
+    { "id": "uniforms", "label": "制服/职业", "parentId": "clothing", "kind": "folder", "order": 3 },
+    { "id": "school-uniform", "label": "校服", "parentId": "uniforms", "kind": "tag", "order": 0 },
+    { "id": "business-suit", "label": "职业套装", "parentId": "uniforms", "kind": "tag", "order": 1 },
+    { "id": "lab-coat", "label": "白大褂", "parentId": "uniforms", "kind": "tag", "order": 2 },
+    { "id": "sportswear", "label": "运动队服", "parentId": "uniforms", "kind": "tag", "order": 3 },
+
+    { "id": "shoes", "label": "鞋履", "parentId": "clothing", "kind": "folder", "order": 4 },
+    { "id": "sneakers", "label": "运动鞋", "parentId": "shoes", "kind": "tag", "order": 0 },
+    { "id": "flats", "label": "平底鞋", "parentId": "shoes", "kind": "tag", "order": 1 },
+    { "id": "boots", "label": "靴子", "parentId": "shoes", "kind": "tag", "order": 2 },
+    { "id": "loafers", "label": "乐福鞋", "parentId": "shoes", "kind": "tag", "order": 3 },
+    { "id": "sandals", "label": "凉鞋", "parentId": "shoes", "kind": "tag", "order": 4 },
+    { "id": "canvas", "label": "帆布鞋", "parentId": "shoes", "kind": "tag", "order": 5 },
+
+    { "id": "accessories", "label": "配饰", "parentId": null, "kind": "folder", "order": 1 },
+    { "id": "headwear", "label": "帽子/头饰", "parentId": "accessories", "kind": "tag", "order": 0 },
+    { "id": "scarf", "label": "围巾", "parentId": "accessories", "kind": "tag", "order": 1 },
+    { "id": "eyewear", "label": "眼镜", "parentId": "accessories", "kind": "tag", "order": 2 },
+    { "id": "jewelry", "label": "首饰(耳环/项链)", "parentId": "accessories", "kind": "tag", "order": 3 },
+    { "id": "watch", "label": "手表", "parentId": "accessories", "kind": "tag", "order": 4 },
+    { "id": "bag", "label": "包袋", "parentId": "accessories", "kind": "tag", "order": 5 },
+    { "id": "belt", "label": "腰带", "parentId": "accessories", "kind": "tag", "order": 6 }
+  ]
+}

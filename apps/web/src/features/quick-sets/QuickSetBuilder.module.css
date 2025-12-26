@@ -1,0 +1,61 @@
+/**
+ * QuickSetBuilder styles
+ */
+
+.container {
+  /* Container for the entire builder */
+}
+
+.warningBar {
+  background: var(--mantine-color-orange-1);
+  padding: var(--mantine-spacing-xs);
+  border-radius: var(--mantine-radius-sm);
+}
+
+.headerTitle {
+  color: var(--mantine-color-blue-7);
+}
+
+.breadcrumbSep {
+  color: var(--mantine-color-dimmed);
+}
+
+.breadcrumbItem {
+  cursor: pointer;
+  transition: transform 100ms ease;
+}
+
+.breadcrumbItem:hover {
+  transform: translateY(-1px);
+}
+
+.folderRow {
+  padding: var(--mantine-spacing-xs);
+  border-radius: var(--mantine-radius-sm);
+  cursor: pointer;
+  transition: background-color 100ms ease;
+}
+
+.folderRow:hover {
+  background-color: var(--mantine-color-blue-0);
+}
+
+.folderIcon {
+  color: var(--mantine-color-blue-6);
+  flex-shrink: 0;
+}
+
+.tagRow {
+  padding: var(--mantine-spacing-xs);
+  border-radius: var(--mantine-radius-sm);
+}
+
+.tagRow:hover {
+  background-color: var(--mantine-color-gray-0);
+}
+
+.tagIcon {
+  color: var(--mantine-color-green-6);
+  flex-shrink: 0;
+}
+
