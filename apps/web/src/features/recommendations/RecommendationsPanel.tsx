@@ -24,6 +24,7 @@ import type { RecommendationsConfig } from '../../types/project-pack';
 import { getTagDisplayLabel } from '../../utils/searchMatch';
 import { useSettingsStore } from '../../store';
 import styles from './RecommendationsPanel.module.css';
+import { devWarn as loggerDevWarn } from '../../utils/logger';
 
 interface RecommendationsPanelProps {
   index: TaxonomyIndex;
@@ -133,7 +134,7 @@ export function RecommendationsPanel({
       const node = index.byId.get(tagId)!;
       const sortPath = index.sortPathCache.get(tagId);
       if (!sortPath) {
-        console.warn(`[RecommendationsPanel] Missing sortPath for tag ${tagId}`);
+        loggerDevWarn(`[RecommendationsPanel] Missing sortPath for tag ${tagId}`);
         continue;
       }
       candidates.push({ node, count, sortPath });

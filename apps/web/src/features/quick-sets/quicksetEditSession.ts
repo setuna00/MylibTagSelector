@@ -19,6 +19,7 @@ import type { QuickSet, QSNode, QSFolder, QSTag } from './types';
 import { generateQSId, createEmptyQuickSet, createEmptyFolder, createTagRef } from './types';
 import { getExtensions, injectExtensions } from '../../utils/extensions';
 import { useTaxonomyStore } from '../../store';
+import { devWarn as loggerDevWarn } from '../../utils/logger';
 
 // ============================================================================
 // Migration: Old QuickTree format -> New QuickSet format
@@ -352,7 +353,7 @@ export const useQuickSetEditSession = create<QuickSetEditSessionState & QuickSet
     initDraftFromTaxonomy: (quickSetId?: string | null) => {
       const { taxonomy, index } = useTaxonomyStore.getState();
       if (!taxonomy) {
-        console.warn('[QuickSetEditSession] Cannot init: no taxonomy loaded');
+        loggerDevWarn('[QuickSetEditSession] Cannot init: no taxonomy loaded');
         return;
       }
 
@@ -369,7 +370,7 @@ export const useQuickSetEditSession = create<QuickSetEditSessionState & QuickSet
       });
 
       if (warnings.length > 0) {
-        console.warn('[QuickSetEditSession] Migration warnings:', warnings);
+        loggerDevWarn('[QuickSetEditSession] Migration warnings:', warnings);
       }
     },
 
@@ -385,7 +386,7 @@ export const useQuickSetEditSession = create<QuickSetEditSessionState & QuickSet
       // Verify QuickSet exists
       const qs = draftQuickSets.find((q) => q.id === quickSetId);
       if (!qs) {
-        console.warn(`[QuickSetEditSession] QuickSet "${quickSetId}" not found`);
+        loggerDevWarn(`[QuickSetEditSession] QuickSet "${quickSetId}" not found`);
         return;
       }
 
@@ -421,7 +422,7 @@ export const useQuickSetEditSession = create<QuickSetEditSessionState & QuickSet
       const { taxonomy, setTaxonomy } = useTaxonomyStore.getState();
       
       if (!taxonomy) {
-        console.warn('[QuickSetEditSession] Cannot save: no taxonomy loaded');
+        loggerDevWarn('[QuickSetEditSession] Cannot save: no taxonomy loaded');
         return;
       }
 

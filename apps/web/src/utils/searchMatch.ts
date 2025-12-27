@@ -1,108 +1,139 @@
 /**
  * TagSelector - Search Match Utilities
- * 
+ *
  * Tools for matching nodes by label, displayName, or aliases (case-insensitive).
  */
 
-import type { TagNode } from '@tagselector/tag-core';
+type UnknownRecord = Record<string, unknown>;
 
-/**
- * Get aliases from a node.
- * 
- * Reads from node.data?.aliases (for wrapped nodes like react-arborist).
- * 
- * @param node - The node (may be TagNode or wrapped with data field)
- * @returns Array of alias strings (trimmed, non-empty)
- */
-export function getAliases(node: any): string[] {
-  // Read from node.data?.aliases (as specified)
-  const aliases = (node as any).data?.aliases;
-  
-  if (!aliases || !Array.isArray(aliases)) {
-    return [];
-  }
-  
-  // Filter: only strings, trim, remove empty
-  return aliases
-    .filter((a): a is string => typeof a === 'string')
-    .map(a => a.trim())
-    .filter(a => a.length > 0);
+function isRecord(v: unknown): v is UnknownRecord {
+  return typeof v === 'object' && v !== null;
+}
+
+function asNonEmptyTrimmedString(v: unknown): string | undefined {
+  if (typeof v !== 'string') return undefined;
+  const s = v.trim();
+  return s.length > 0 ? s : undefined;
 }
 
 /**
- * Get displayName from a node.
- * 
- * Reads from node.data?.displayName.
- * 
- * @param node - The node (may be TagNode or wrapped with data field)
- * @returns displayName string or undefined
+ * Returns a record that contains the tag's metadata fields (displayName/aliases),
+ * supporting both shapes:
+ * - TagNode: node.data contains displayName/aliases
+ * - Wrapped node: node.data is TagNode-like, and node.data.data contains displayName/aliases
  */
-export function getDisplayName(node: any): string | undefined {
-  const nodeWithData = node as TagNode & { data?: { displayName?: string } };
-  const displayName = nodeWithData.data?.displayName;
-  if (typeof displayName === 'string' && displayName.trim().length > 0) {
-    return displayName.trim();
+function getTagDataObject(node: unknown): UnknownRecord | undefined {
+  if (!isRecord(node)) return undefined;
+
+  const data = node['data'];
+  if (!isRecord(data)) return undefined;
+
+  // Case 1: node.data is already the data object
+  if ('displayName' in data || 'aliases' in data) {
+    return data;
   }
+
+  // Case 2: node.data is TagNode-like; check nested data
+  const nested = data['data'];
+  if (isRecord(nested)) {
+    return nested;
+  }
+
   return undefined;
 }
 
 /**
- * Get display label for a tag node (for UI display, not export).
- * 
- * Uses displayName if available, otherwise falls back to label.
- * This should be used everywhere in the UI except for export preview.
- * 
- * @param node - The node (may be TagNode or wrapped with data field)
- * @returns Display label string
+ * Get label from a node.
+ *
+ * Supports both shapes:
+ * - Wrapped node: node.data.label
+ * - TagNode: node.label
  */
-export function getTagDisplayLabel(node: any): string {
+function getLabel(node: unknown): string | undefined {
+  if (!isRecord(node)) return undefined;
+
+  const data = node['data'];
+  if (isRecord(data)) {
+    const fromDataLabel = asNonEmptyTrimmedString(data['label']);
+    if (fromDataLabel) return fromDataLabel;
+  }
+
+  return asNonEmptyTrimmedString(node['label']);
+}
+
+/**
+ * Get aliases from a node.
+ *
+ * Reads from tagData.aliases (see getTagDataObject).
+ */
+export function getAliases(node: unknown): string[] {
+  const data = getTagDataObject(node);
+  if (!data) return [];
+
+  const aliases = data['aliases'];
+  if (!Array.isArray(aliases)) {
+    return [];
+  }
+
+  return aliases
+    .filter((a): a is string => typeof a === 'string')
+    .map((a) => a.trim())
+    .filter((a) => a.length > 0);
+}
+
+/**
+ * Get displayName from a node.
+ *
+ * Reads from tagData.displayName (see getTagDataObject).
+ */
+export function getDisplayName(node: unknown): string | undefined {
+  const data = getTagDataObject(node);
+  if (!data) return undefined;
+
+  return asNonEmptyTrimmedString(data['displayName']);
+}
+
+/**
+ * Get display label for a tag node (for UI display, not export).
+ *
+ * Uses displayName if available, otherwise falls back to label.
+ */
+export function getTagDisplayLabel(node: unknown): string {
   const displayName = getDisplayName(node);
   if (displayName) {
     return displayName;
   }
-  // Fallback to label
-  const label = (node as any).data?.label ?? (node as TagNode).label;
-  return typeof label === 'string' ? label : '';
+
+  return getLabel(node) ?? '';
 }
 
 /**
  * Check if a node matches the query (case-insensitive).
- * 
+ *
  * Matches if any of the following contains the query:
- * - node.label
- * - node.data.displayName (if present)
- * - node.data.aliases (if present)
- * 
- * @param node - The node (may be TagNode or wrapped with data field)
- * @param query - Search query string
- * @returns true if node matches query, false otherwise
+ * - label
+ * - displayName
+ * - aliases
  */
-export function nodeMatchesQuery(node: any, query: string): boolean {
-  // Empty query -> no match
+export function nodeMatchesQuery(node: unknown, query: string): boolean {
   const trimmedQuery = query.trim();
   if (!trimmedQuery) {
     return false;
   }
-  
+
   const q = trimmedQuery.toLowerCase();
-  
-  // Get label (support both direct and wrapped nodes)
-  const label = (node as any).data?.label ?? (node as TagNode).label;
-  if (typeof label !== 'string') {
-    return false;
-  }
-  
-  // Check label match
+
+  const label = getLabel(node);
+  if (!label) return false;
+
   const labelMatch = label.toLowerCase().includes(q);
-  
-  // Check displayName match
+
   const displayName = getDisplayName(node);
   const displayNameMatch = displayName ? displayName.toLowerCase().includes(q) : false;
-  
-  // Check aliases match
+
   const aliases = getAliases(node);
-  const aliasMatch = aliases.some(a => a.toLowerCase().includes(q));
-  
+  const aliasMatch = aliases.some((a) => a.toLowerCase().includes(q));
+
   return labelMatch || displayNameMatch || aliasMatch;
 }
 

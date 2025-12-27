@@ -53,13 +53,13 @@ export function SelectionChips({
                 backgroundColor: hex,
                 borderColor: hex,
                 color: textColor,
-                maxWidth: 195, // 150 * 1.3，匹配放大后的比例
+                maxWidth: 156, // 150 * 1.04，匹配放大后的比例
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
               }
             : {
-                maxWidth: 195, // 150 * 1.3
+                maxWidth: 156, // 150 * 1.04
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',

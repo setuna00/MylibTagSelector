@@ -22,6 +22,37 @@ import {
 import type { ValidationError } from '@tagselector/tag-core';
 import { useRulesStore } from './rulesStore';
 import type { TaxonomyExtensions } from '../types/project-pack';
+import { warn as loggerWarn, devWarn as loggerDevWarn, error as loggerError } from '../utils/logger';
+
+/**
+ * Type guard to check if meta has extensions field.
+ */
+function hasExtensions(meta: Taxonomy['meta']): meta is Taxonomy['meta'] & { extensions: TaxonomyExtensions } {
+  return meta !== undefined && 'extensions' in meta && typeof meta.extensions === 'object' && meta.extensions !== null;
+}
+
+/**
+ * Safely read extensions from taxonomy.meta.
+ * Returns partial extensions (all fields optional) for merging.
+ */
+function getExtensionsFromMeta(meta: Taxonomy['meta']): Partial<TaxonomyExtensions> {
+  if (!hasExtensions(meta)) {
+    return {};
+  }
+  // hasExtensions type guard ensures meta.extensions is TaxonomyExtensions
+  return meta.extensions;
+}
+
+/**
+ * Type definition for tag node data fields used in this store.
+ */
+interface TagNodeData {
+  displayName?: string;
+  aliases?: string[];
+  color?: string;
+  recommendedTagIds?: string[];
+  [key: string]: unknown;
+}
 
 interface TaxonomyState {
   taxonomy: Taxonomy | null;
@@ -96,7 +127,7 @@ export const useTaxonomyStore = create<TaxonomyState & TaxonomyActions>()(
           const error = errorMessages || 'Unknown error';
           
           // Log to console
-          console.warn('[TagSelector] Import validation errors:', errors);
+          loggerWarn('[TagSelector] Import validation errors:', errors);
           
           set({
             error,
@@ -142,8 +173,7 @@ export const useTaxonomyStore = create<TaxonomyState & TaxonomyActions>()(
         const { savedRules } = useRulesStore.getState();
 
         // Get existing extensions (safely handle undefined meta)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const existingExt = (taxonomy.meta as any)?.extensions ?? {};
+        const existingExt = getExtensionsFromMeta(taxonomy.meta);
 
         // Construct new extensions (preserve existing ui config)
         const newExtensions: TaxonomyExtensions = {
@@ -191,7 +221,7 @@ export const useTaxonomyStore = create<TaxonomyState & TaxonomyActions>()(
         // Handle regular folder: update node.label
         const nodeIndex = taxonomy.nodes.findIndex((n) => n.id === nodeId);
         if (nodeIndex === -1) {
-          console.warn(`[TagSelector] Node ${nodeId} not found for label update`);
+          loggerDevWarn(`[TagSelector] Node ${nodeId} not found for label update`);
           return;
         }
 
@@ -225,79 +255,83 @@ export const useTaxonomyStore = create<TaxonomyState & TaxonomyActions>()(
 
         const nodeIndex = taxonomy.nodes.findIndex((n) => n.id === tagId);
         if (nodeIndex === -1) {
-          console.warn(`[TagSelector] Tag ${tagId} not found for data update`);
+          loggerDevWarn(`[TagSelector] Tag ${tagId} not found for data update`);
           return;
         }
 
         const node = taxonomy.nodes[nodeIndex];
         if (node.kind !== 'tag') {
-          console.warn(`[TagSelector] Node ${tagId} is not a tag`);
+          loggerDevWarn(`[TagSelector] Node ${tagId} is not a tag`);
           return;
         }
 
-        // Type assertion for node with data field
-        const nodeWithData = node as TagNode & {
-          data?: { displayName?: string; aliases?: string[]; color?: string; recommendedTagIds?: string[] };
-        };
+        // Read current data (TagNode.data is already defined in the type)
+        // TagNode.data has index signature, so it's compatible with TagNodeData
+        const currentData: TagNodeData = (node.data || {}) as TagNodeData;
+
+        // Build updated data by constructing new object (avoiding delete operator)
+        const updatedData: Partial<TagNodeData> = {};
+        
+        // Copy other unknown fields from currentData first (preserve fields we don't manage)
+        for (const key in currentData) {
+          if (key !== 'displayName' && key !== 'color' && key !== 'aliases' && key !== 'recommendedTagIds') {
+            updatedData[key] = currentData[key];
+          }
+        }
+        
+        // Handle displayName: if undefined, keep existing; if empty string, exclude; otherwise update
+        if (updates.displayName === undefined) {
+          if (currentData.displayName !== undefined && currentData.displayName !== '') {
+            updatedData.displayName = currentData.displayName;
+          }
+        } else if (updates.displayName !== '') {
+          updatedData.displayName = updates.displayName;
+        }
+        // If updates.displayName === '', we don't add it to updatedData (excluded)
+        
+        // Handle color: if undefined, keep existing; if empty string, exclude; otherwise update
+        if (updates.color === undefined) {
+          if (currentData.color !== undefined && currentData.color !== '') {
+            updatedData.color = currentData.color;
+          }
+        } else if (updates.color !== '') {
+          updatedData.color = updates.color;
+        }
+        // If updates.color === '', we don't add it to updatedData (excluded)
+        
+        // Handle aliases: if undefined, keep existing; if empty array, exclude; otherwise update
+        if (updates.aliases === undefined) {
+          if (currentData.aliases !== undefined && currentData.aliases.length > 0) {
+            updatedData.aliases = currentData.aliases;
+          }
+        } else if (updates.aliases.length > 0) {
+          updatedData.aliases = updates.aliases;
+        }
+        // If updates.aliases.length === 0, we don't add it to updatedData (excluded)
+
+        // Handle recommendedTagIds: if undefined, keep existing; if empty array, exclude; otherwise update
+        if (updates.recommendedTagIds === undefined) {
+          if (currentData.recommendedTagIds !== undefined && currentData.recommendedTagIds.length > 0) {
+            updatedData.recommendedTagIds = currentData.recommendedTagIds;
+          }
+        } else if (updates.recommendedTagIds.length > 0) {
+          updatedData.recommendedTagIds = updates.recommendedTagIds;
+        }
+        // If updates.recommendedTagIds.length === 0, we don't add it to updatedData (excluded)
+
+        // Determine if we should include data field (has any non-empty values)
+        const hasAnyData = Object.keys(updatedData).length > 0;
 
         // Build updated node
-        const updatedNode: TagNode & {
-          data?: { displayName?: string; aliases?: string[]; color?: string; recommendedTagIds?: string[] };
-        } = {
+        // TagNode.data has index signature, so Partial<TagNodeData> is compatible
+        const finalNode: TagNode = {
           ...node,
           ...(updates.label !== undefined ? { label: updates.label } : {}),
+          ...(hasAnyData ? { data: updatedData as TagNode['data'] } : {}),
         };
 
-        // Update data field
-        const currentData = nodeWithData.data || {};
-        const updatedData: { displayName?: string; aliases?: string[]; color?: string; recommendedTagIds?: string[] } = { ...currentData };
-        
-        // Handle displayName: if undefined, don't update; if empty string, delete it; otherwise update
-        if (updates.displayName !== undefined) {
-          if (updates.displayName === '') {
-            delete updatedData.displayName;
-          } else {
-            updatedData.displayName = updates.displayName;
-          }
-        }
-        
-        // Handle color: if undefined, don't update; if empty string, delete it; otherwise update
-        if (updates.color !== undefined) {
-          if (updates.color === '') {
-            delete updatedData.color;
-          } else {
-            updatedData.color = updates.color;
-          }
-        }
-        
-        // Handle aliases: if undefined, don't update; if empty array, delete it; otherwise update
-        if (updates.aliases !== undefined) {
-          if (updates.aliases.length === 0) {
-            delete updatedData.aliases;
-          } else {
-            updatedData.aliases = updates.aliases;
-          }
-        }
-
-        // Handle recommendedTagIds: if undefined, don't update; if empty array, delete it; otherwise update
-        if (updates.recommendedTagIds !== undefined) {
-          if (updates.recommendedTagIds.length === 0) {
-            delete updatedData.recommendedTagIds;
-          } else {
-            updatedData.recommendedTagIds = updates.recommendedTagIds;
-          }
-        }
-
-        // Only include data field if it has any values
-        if (updatedData.displayName || updatedData.color || (updatedData.aliases && updatedData.aliases.length > 0) || (updatedData.recommendedTagIds && updatedData.recommendedTagIds.length > 0)) {
-          updatedNode.data = updatedData;
-        } else {
-          // Remove data field if empty
-          delete (updatedNode as any).data;
-        }
-
         const updatedNodes = [...taxonomy.nodes];
-        updatedNodes[nodeIndex] = updatedNode;
+        updatedNodes[nodeIndex] = finalNode;
 
         const updatedTaxonomy: Taxonomy = {
           ...taxonomy,
@@ -314,7 +348,7 @@ export const useTaxonomyStore = create<TaxonomyState & TaxonomyActions>()(
 
         const node = index.byId.get(nodeId);
         if (!node) {
-          console.warn(`[TagSelector] Node ${nodeId} not found for order swap`);
+          loggerDevWarn(`[TagSelector] Node ${nodeId} not found for order swap`);
           return;
         }
 
@@ -328,7 +362,7 @@ export const useTaxonomyStore = create<TaxonomyState & TaxonomyActions>()(
         // Find current node's index in sorted siblings
         const currentIndex = siblings.indexOf(nodeId);
         if (currentIndex === -1) {
-          console.warn(`[TagSelector] Node ${nodeId} not found in siblings`);
+          loggerDevWarn(`[TagSelector] Node ${nodeId} not found in siblings`);
           return;
         }
 
@@ -352,7 +386,7 @@ export const useTaxonomyStore = create<TaxonomyState & TaxonomyActions>()(
         const targetNodeId = siblings[targetIndex];
         const targetNode = index.byId.get(targetNodeId);
         if (!targetNode) {
-          console.warn(`[TagSelector] Target node ${targetNodeId} not found`);
+          loggerDevWarn(`[TagSelector] Target node ${targetNodeId} not found`);
           return;
         }
 
@@ -431,12 +465,11 @@ export const useTaxonomyStore = create<TaxonomyState & TaxonomyActions>()(
             return n;
           }
 
-          // Access data field (may exist in runtime even if not in type definition)
-          const nodeWithData = n as typeof n & {
-            data?: { recommendedTagIds?: string[] };
-          };
-
-          const recommendedTagIds = nodeWithData.data?.recommendedTagIds;
+          // Access data field (TagNode.data is already defined in the type)
+          // TagNode.data has index signature, so it's compatible with TagNodeData
+          const nodeData: TagNodeData | undefined = n.data as TagNodeData | undefined;
+          const recommendedTagIds = nodeData?.recommendedTagIds;
+          
           if (!Array.isArray(recommendedTagIds) || recommendedTagIds.length === 0) {
             return n;
           }
@@ -455,25 +488,31 @@ export const useTaxonomyStore = create<TaxonomyState & TaxonomyActions>()(
           // Count cleaned references
           cleanedReferenceCount += originalLength - cleanedRecommendedIds.length;
 
-          // Build updated data
-          const updatedData = { ...nodeWithData.data };
-          if (cleanedRecommendedIds.length === 0) {
-            // Remove recommendedTagIds if empty
-            delete updatedData.recommendedTagIds;
-          } else {
+          // Build updated data by constructing new object (avoiding delete operator)
+          const updatedData: Partial<TagNodeData> = {};
+          
+          // Copy other fields from existing data
+          if (nodeData) {
+            for (const key in nodeData) {
+              if (key !== 'recommendedTagIds') {
+                updatedData[key] = nodeData[key];
+              }
+            }
+          }
+          
+          // Add cleaned recommendedTagIds if not empty
+          if (cleanedRecommendedIds.length > 0) {
             updatedData.recommendedTagIds = cleanedRecommendedIds;
           }
 
-          // Build updated node
-          const updatedNode = {
-            ...n,
-            data: Object.keys(updatedData).length > 0 ? updatedData : undefined,
-          };
+          // Determine if we should include data field
+          const hasAnyData = Object.keys(updatedData).length > 0;
 
-          // Remove data field if completely empty
-          if (!updatedNode.data || Object.keys(updatedNode.data).length === 0) {
-            delete (updatedNode as any).data;
-          }
+          // Build updated node (omit the data field entirely when empty)
+          const updatedNode: TagNode = {
+            ...n,
+            ...(hasAnyData ? { data: updatedData as TagNode['data'] } : {}),
+          };
 
           return updatedNode;
         }).filter((n) => !nodesToRemove.has(n.id));
@@ -511,7 +550,7 @@ export const useTaxonomyStore = create<TaxonomyState & TaxonomyActions>()(
           newNodeId = generateId();
           attempts++;
           if (attempts > 100) {
-            console.error('[TagSelector] Failed to generate unique ID after 100 attempts');
+            loggerError('[TagSelector] Failed to generate unique ID after 100 attempts');
             return null;
           }
         } while (index.byId.has(newNodeId));
@@ -537,18 +576,17 @@ export const useTaxonomyStore = create<TaxonomyState & TaxonomyActions>()(
         };
 
         // For tag, add data fields (displayName, aliases, color)
-        // Use type assertion to add data field (preserved in JSON but not in TagNode type)
-        const newNode = kind === 'tag'
-          ? (newNodeBase as TagNode & { data?: { displayName?: string; aliases?: string[]; color?: string } })
+        // TagNode.data is already defined in the type, so we can construct it directly
+        const newNode: TagNode = kind === 'tag'
+          ? {
+              ...newNodeBase,
+              data: {
+                displayName: '',
+                aliases: [],
+                color: '#3b82f6', // Default blue color
+              },
+            }
           : newNodeBase;
-
-        if (kind === 'tag') {
-          (newNode as TagNode & { data?: { displayName?: string; aliases?: string[]; color?: string } }).data = {
-            displayName: '',
-            aliases: [],
-            color: '#3b82f6', // Default blue color
-          };
-        }
 
         // Add to taxonomy
         const updatedNodes = [...taxonomy.nodes, newNode];
@@ -575,7 +613,7 @@ export const useTaxonomyStore = create<TaxonomyState & TaxonomyActions>()(
           
           if (!validation.valid) {
             // Log warnings but don't block - UI guards will handle invalid navigation
-            console.warn(
+            loggerDevWarn(
               '[TagSelector] Rehydrated taxonomy has validation errors:',
               validation.errors.map((e) => `${e.code}: ${e.message}`)
             );

@@ -13,9 +13,18 @@
             try {
                 localStorage.removeItem('tagselector-taxonomy');
                 localStorage.removeItem('tagselector-selection');
-                document.getElementById('result').innerHTML = '<p style="color: green;">Storage cleared successfully! Please refresh your app.</p>';
+                localStorage.removeItem('tagselector-rules');
+                const resultEl = document.getElementById('result');
+                const p = document.createElement('p');
+                p.style.color = 'green';
+                p.textContent = 'Storage cleared successfully! Please refresh your app.';
+                resultEl.replaceChildren(p);
             } catch (e) {
-                document.getElementById('result').innerHTML = '<p style="color: red;">Error: ' + e.message + '</p>';
+                const resultEl = document.getElementById('result');
+                const p = document.createElement('p');
+                p.style.color = 'red';
+                p.textContent = 'Error: ' + (e?.message ?? String(e));
+                resultEl.replaceChildren(p);
             }
         }
     </script>

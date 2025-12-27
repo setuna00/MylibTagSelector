@@ -23,6 +23,7 @@ import { getTagColorHex, getReadableTextColor, getOutlineTextColor } from '../..
 import { getTagDisplayLabel } from '../../utils/searchMatch';
 import { useTaxonomyStore, useSelectionStore, useSettingsStore, useRulesStore } from '../../store';
 import styles from './CurrentLevelView.module.css';
+import { devWarn as loggerDevWarn } from '../../utils/logger';
 
 /**
  * Check if a node is a folder (can be navigated into).
@@ -43,7 +44,7 @@ function warnIfTagHasChildren(
   if (node.kind === 'tag') {
     const children = childrenOf.get(node.id);
     if (children && children.length > 0) {
-      console.warn(
+      loggerDevWarn(
         `[TagSelector] Invalid data: Tag "${node.label}" (id: ${node.id}) has ${children.length} children. ` +
         `Tags must be leaf nodes. This tag will be treated as a selectable tag, not a navigable container.`
       );

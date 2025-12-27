@@ -7,6 +7,7 @@ import { useElementSize } from '@mantine/hooks';
 import { indexToTreeData, filterTreeDataByQuery } from './treeDataBuilder';
 import type { TreeItem } from './treeDataBuilder';
 import styles from './TaxonomyTree.module.css';
+import { devWarn as loggerDevWarn } from '../../utils/logger';
 
 /**
  * Local type definition for react-arborist node render props.
@@ -66,7 +67,7 @@ function Node({
       
       // Dev warning for legacy data: tag with children
       if (import.meta.env.DEV && node.data.kind === 'tag' && node.isInternal) {
-        console.warn(
+        loggerDevWarn(
           `[TagSelector] Tag "${node.data.label}" (id: ${node.id}) has children. ` +
           `Consider changing to kind:'folder' for semantic consistency.`
         );

@@ -1,4 +1,5 @@
 import React from 'react';
+import { error as loggerError } from '../../utils/logger';
 
 type Props = {
   children: React.ReactNode;
@@ -18,8 +19,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   componentDidCatch(error: Error) {
     // 保留日志，方便定位
-    // eslint-disable-next-line no-console
-    console.error('[TagSelector] Uncaught render error:', error);
+    loggerError('[TagSelector] Uncaught render error:', error);
   }
 
   private handleReload = () => {

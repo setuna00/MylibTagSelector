@@ -38,6 +38,7 @@ import {
 import type { TaxonomyIndex } from '@tagselector/tag-core';
 import { useQuickSetEditSession } from './quicksetEditSession';
 import type { QSFolder, QSTag } from './types';
+import { useSettingsStore } from '../../store';
 import styles from './QuickSetBuilder.module.css';
 
 interface QuickSetBuilderProps {
@@ -47,6 +48,7 @@ interface QuickSetBuilderProps {
 }
 
 export function QuickSetBuilder({ index, onNotify }: QuickSetBuilderProps) {
+  const { uiLanguage } = useSettingsStore();
   const {
     isEditing,
     dirty,
@@ -117,13 +119,15 @@ export function QuickSetBuilder({ index, onNotify }: QuickSetBuilderProps) {
     if (!isEmpty) {
       // Show confirmation dialog
       const confirmed = window.confirm(
-        `文件夹 "${folderName}" 不为空，确定要删除吗？\n删除后其中所有内容都会丢失。`
+        uiLanguage === 'zh'
+          ? `文件夹 "${folderName}" 不为空，确定要删除吗？\n删除后其中所有内容都会丢失。`
+          : `Folder "${folderName}" is not empty. Are you sure you want to delete it?\nAll contents will be lost.`
       );
       if (!confirmed) return;
     }
 
     deleteFolder(folderId, true);
-  }, [isFolderEmpty, deleteFolder]);
+  }, [isFolderEmpty, deleteFolder, uiLanguage]);
 
   const handleRemoveTag = useCallback((tagId: string) => {
     removeTagFromCurrentFolder(tagId);
@@ -136,16 +140,20 @@ export function QuickSetBuilder({ index, onNotify }: QuickSetBuilderProps) {
 
   const handleSave = useCallback(() => {
     saveAndExit();
-    onNotify?.('QuickSet 已保存', 'success');
-  }, [saveAndExit, onNotify]);
+    onNotify?.(uiLanguage === 'zh' ? 'QuickSet 已保存' : 'QuickSet saved', 'success');
+  }, [saveAndExit, onNotify, uiLanguage]);
 
   const handleCancel = useCallback(() => {
     if (dirty) {
-      const confirmed = window.confirm('确定要取消吗？所有未保存的更改将丢失。');
+      const confirmed = window.confirm(
+        uiLanguage === 'zh'
+          ? '确定要取消吗？所有未保存的更改将丢失。'
+          : 'Are you sure you want to cancel? All unsaved changes will be lost.'
+      );
       if (!confirmed) return;
     }
     cancelEditing();
-  }, [dirty, cancelEditing]);
+  }, [dirty, cancelEditing, uiLanguage]);
 
   // ========================================================================
   // Not in editing mode
@@ -165,7 +173,9 @@ export function QuickSetBuilder({ index, onNotify }: QuickSetBuilderProps) {
       {migrationWarnings.length > 0 && (
         <div className={styles.warningBar}>
           <Text size="xs" c="orange">
-            ⚠️ 检测到旧格式数据，部分内容已自动转换或跳过
+            ⚠️ {uiLanguage === 'zh'
+              ? '检测到旧格式数据，部分内容已自动转换或跳过'
+              : 'Old format data detected, some content has been automatically converted or skipped'}
           </Text>
         </div>
       )}
@@ -174,11 +184,11 @@ export function QuickSetBuilder({ index, onNotify }: QuickSetBuilderProps) {
       <Group justify="space-between" wrap="nowrap">
         <Group gap="xs" wrap="nowrap">
           <Text size="sm" fw={600} className={styles.headerTitle}>
-            正在编辑：{editingQuickSet.name}
+            {uiLanguage === 'zh' ? '正在编辑：' : 'Editing: '}{editingQuickSet.name}
           </Text>
           <Text size="sm" c="dimmed">·</Text>
           <Text size="sm" c="dimmed">
-            当前位置：
+            {uiLanguage === 'zh' ? '当前位置：' : 'Current location: '}
           </Text>
           {/* Breadcrumb */}
           <Group gap={4} wrap="nowrap">
@@ -193,7 +203,7 @@ export function QuickSetBuilder({ index, onNotify }: QuickSetBuilderProps) {
                   leftSection={item.id === 'root' ? <Home size={14} /> : <Folder size={14} />}
                   onClick={() => navigateToFolder(item.id)}
                 >
-                  {item.id === 'root' ? '根目录' : item.name}
+                  {item.id === 'root' ? (uiLanguage === 'zh' ? '根目录' : 'Root') : item.name}
                 </Badge>
               </Group>
             ))}
@@ -204,7 +214,7 @@ export function QuickSetBuilder({ index, onNotify }: QuickSetBuilderProps) {
         <Group gap="xs" wrap="nowrap">
           {dirty && (
             <Badge size="xs" color="orange" variant="light">
-              未保存
+              {uiLanguage === 'zh' ? '未保存' : 'Unsaved'}
             </Badge>
           )}
           <Button
@@ -214,14 +224,14 @@ export function QuickSetBuilder({ index, onNotify }: QuickSetBuilderProps) {
             leftSection={<X size={14} />}
             onClick={handleCancel}
           >
-            取消
+            {uiLanguage === 'zh' ? '取消' : 'Cancel'}
           </Button>
           <Button
             size="xs"
             leftSection={<Save size={14} />}
             onClick={handleSave}
           >
-            保存
+            {uiLanguage === 'zh' ? '保存' : 'Save'}
           </Button>
         </Group>
       </Group>
@@ -234,7 +244,7 @@ export function QuickSetBuilder({ index, onNotify }: QuickSetBuilderProps) {
           <Group gap="xs" wrap="nowrap">
             <TextInput
               size="xs"
-              placeholder="新文件夹名称..."
+              placeholder={uiLanguage === 'zh' ? '新文件夹名称...' : 'New folder name...'}
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.currentTarget.value)}
               onKeyDown={(e) => {
@@ -275,12 +285,14 @@ export function QuickSetBuilder({ index, onNotify }: QuickSetBuilderProps) {
             leftSection={<FolderPlus size={14} />}
             onClick={() => setShowNewFolderInput(true)}
           >
-            新建文件夹
+            {uiLanguage === 'zh' ? '新建文件夹' : 'New Folder'}
           </Button>
         )}
 
         <Text size="xs" c="dimmed" ml="auto">
-          单击右侧主树中的标签可添加到当前文件夹
+          {uiLanguage === 'zh'
+            ? '单击右侧主树中的标签可添加到当前文件夹'
+            : 'Click tags in the main tree on the right to add them to the current folder'}
         </Text>
       </Group>
 
@@ -291,7 +303,9 @@ export function QuickSetBuilder({ index, onNotify }: QuickSetBuilderProps) {
         <Stack gap="xs">
           {!currentFolder || currentFolder.children.length === 0 ? (
             <Text size="sm" c="dimmed" ta="center" py="md">
-              当前文件夹为空，点击右侧标签添加，或创建子文件夹
+              {uiLanguage === 'zh'
+                ? '当前文件夹为空，点击右侧标签添加，或创建子文件夹'
+                : 'Current folder is empty. Click tags on the right to add, or create a subfolder'}
             </Text>
           ) : (
             currentFolder.children.map((node) => {
@@ -360,7 +374,7 @@ export function QuickSetBuilder({ index, onNotify }: QuickSetBuilderProps) {
                           {folder.name}
                         </Text>
                         <Badge size="xs" variant="light" color="gray">
-                          {folder.children.length} 项
+                          {folder.children.length} {uiLanguage === 'zh' ? '项' : 'items'}
                         </Badge>
                         <ActionIcon
                           size="sm"
@@ -393,7 +407,8 @@ export function QuickSetBuilder({ index, onNotify }: QuickSetBuilderProps) {
                 // Tag row
                 const tag = node as QSTag;
                 const tagNode = index.byId.get(tag.tagId);
-                const label = tag.displayNameOverride || tagNode?.label || `(无效: ${tag.tagId})`;
+                const label = tag.displayNameOverride || tagNode?.label || 
+                  `(${uiLanguage === 'zh' ? '无效' : 'Invalid'}: ${tag.tagId})`;
                 const isValid = !!tagNode;
 
                 return (

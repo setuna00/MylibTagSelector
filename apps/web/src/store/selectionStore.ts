@@ -75,10 +75,15 @@ export const useSelectionStore = create<SelectionState & SelectionActions>()(
       addMany: (nodeIds: NodeId[]) => {
         set((state) => {
           const newSet = new Set(state.selectedIds);
+          let changed = false;
           for (const nodeId of nodeIds) {
-            newSet.add(nodeId);
+            if (!newSet.has(nodeId)) {
+              newSet.add(nodeId);
+              changed = true;
+            }
           }
-          return { selectedIds: newSet };
+          // Avoid triggering re-renders when nothing changes
+          return changed ? { selectedIds: newSet } : state;
         });
       },
 

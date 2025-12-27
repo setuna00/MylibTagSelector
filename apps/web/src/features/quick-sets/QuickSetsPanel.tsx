@@ -24,6 +24,7 @@ import { QuickSetsEditorModal } from './QuickSetsEditorModal';
 import { useQuickSetEditSession } from './quicksetEditSession';
 import { useSettingsStore } from '../../store';
 import styles from './QuickSetsPanel.module.css';
+import { devWarn as loggerDevWarn } from '../../utils/logger';
 
 // Avoid spamming console with the same invalid-ref warning on every render.
 const warnedInvalidRefIds = new Set<string>();
@@ -109,7 +110,7 @@ function QuickTreeNodeRenderer({
     const refId = String(node.refId);
     if (!warnedInvalidRefIds.has(refId)) {
       warnedInvalidRefIds.add(refId);
-      console.warn(
+      loggerDevWarn(
         `[QuickSetsPanel] Invalid ref: refId "${refId}" not found in taxonomy. Skipping.`
       );
     }
@@ -300,7 +301,12 @@ export function QuickSetsPanel({
   // Empty state: no quickTrees configured
   if (quickTrees.length === 0) {
     return (
-      <Paper p="sm" withBorder className={styles.container}>
+      <Paper 
+        p="sm" 
+        withBorder 
+        className={styles.container}
+        style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+      >
         {headerSection}
         <Text size="xs" c="dimmed">
           {uiLanguage === 'zh' ? '暂无快捷分类，点击 + 创建' : 'No quick categories, click + to create'}
@@ -320,10 +326,15 @@ export function QuickSetsPanel({
   }
 
   return (
-    <Paper p="sm" withBorder className={styles.container}>
+    <Paper 
+      p="sm" 
+      withBorder 
+      className={styles.container}
+      style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+    >
       {headerSection}
 
-      <Stack gap="xs">
+      <Stack gap="xs" style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
         {quickTrees.map((tree: QuickTree) => (
           <div key={tree.id} className={styles.setGroup}>
             <Group

@@ -53,6 +53,7 @@ import { useFileOperations } from '../hooks/useFileOperations';
 import { AppShellLayout } from '../layout/AppShellLayout';
 import { ValidationErrorBar, LanguageToggle, CreateNodeButtons } from '../shared/components';
 import { getExtensions } from '../utils/extensions';
+import { devWarn as loggerDevWarn, error as loggerError } from '../utils/logger';
 
 export function TaggingPageContainer() {
   const {
@@ -176,7 +177,7 @@ export function TaggingPageContainer() {
 
     const node = index.byId.get(currentFolderId);
     if (!node || node.kind !== 'folder') {
-      console.warn(
+      loggerDevWarn(
         `[TagSelector] URL folder "${currentFolderId}" not found or not a folder. Resetting to root.`
       );
       // Reset to root with replaceState (don't add to history)
@@ -261,7 +262,7 @@ export function TaggingPageContainer() {
           useRulesStore.getState().setSavedRules(rules, currentIndex);
         })
         .catch((err) => {
-          console.error('Failed to load sample taxonomy:', err);
+          loggerError('Failed to load sample taxonomy:', err);
           notifications.show({
             message: `样本数据加载失败: ${err instanceof Error ? err.message : 'Unknown error'}`,
             color: 'red',
@@ -445,7 +446,7 @@ export function TaggingPageContainer() {
 
     // Guard: must exist and be a folder
     if (!index) {
-      console.warn(
+      loggerDevWarn(
         `[TagSelector] Navigation rejected: index not available. ` +
         `Attempted to navigate to: ${folderId}`
       );
@@ -454,7 +455,7 @@ export function TaggingPageContainer() {
 
     const node = index.byId.get(folderId);
     if (!node) {
-      console.warn(
+      loggerDevWarn(
         `[TagSelector] Navigation rejected: node not found. ` +
         `Attempted to navigate to: ${folderId}`
       );
@@ -462,7 +463,7 @@ export function TaggingPageContainer() {
     }
 
     if (node.kind !== 'folder') {
-      console.warn(
+      loggerDevWarn(
         `[TagSelector] Navigation rejected: "${node.label}" (id: ${folderId}) is a ${node.kind}, not a folder. ` +
         `currentFolderId must only be null (Root) or a folder ID.`
       );
@@ -492,7 +493,7 @@ export function TaggingPageContainer() {
     const newFolderId = createNode('folder', currentFolderId, defaultLabel);
     
     if (!newFolderId) {
-      console.error('[TagSelector] Failed to create folder: createNode returned null');
+      loggerError('[TagSelector] Failed to create folder: createNode returned null');
       return;
     }
     
@@ -500,7 +501,7 @@ export function TaggingPageContainer() {
     const freshIndex = useTaxonomyStore.getState().index;
     
     if (!freshIndex || !freshIndex.byId.has(newFolderId)) {
-      console.error('[TagSelector] New folder not found in index after creation');
+      loggerError('[TagSelector] New folder not found in index after creation');
       return;
     }
     
@@ -518,10 +519,8 @@ export function TaggingPageContainer() {
     const newTagId = createNode('tag', currentFolderId, 'new_tag');
     
     if (newTagId) {
-      // Trigger tag edit modal (placeholder for now)
+      // Open tag edit drawer for the new tag
       setEditTagId(newTagId);
-      // TODO: Open tag edit modal (Prompt3)
-      console.log('Tag edit modal will be implemented in Prompt3, tagId:', newTagId);
     }
   }, [index, currentFolderId, createNode]);
 

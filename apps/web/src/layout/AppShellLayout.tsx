@@ -82,23 +82,23 @@ export function AppShellLayout({
                     {searchSection}
                   </Stack>
                 </Paper>
-                {/* Scrollable middle: Folder tree (only this scrolls) */}
-                <Paper p="md" withBorder style={{ flex: 1, overflow: 'hidden', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>{treeSection}</div>
-                </Paper>
-                {/* Fixed bottom: QuickSets (always visible, taller default) */}
-                {quickSetsSection && (
-                  <div
-                    style={{
-                      flexShrink: 0,
-                      minHeight: 260,
-                      maxHeight: '35%',
-                      overflow: 'auto',
-                    }}
-                  >
-                    {quickSetsSection}
-                  </div>
-                )}
+                {/* Scrollable middle: Folder tree and QuickSets (3:2 ratio, fill remaining space) */}
+                <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 'var(--mantine-spacing-md)' }}>
+                  <Paper p="md" withBorder style={{ flex: '3', minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>{treeSection}</div>
+                  </Paper>
+                  {quickSetsSection && (
+                    <div
+                      style={{
+                        flex: '2',
+                        minHeight: 0,
+                        overflow: 'auto',
+                      }}
+                    >
+                      {quickSetsSection}
+                    </div>
+                  )}
+                </div>
                 {/* Fixed bottom: Left bottom section (after QuickSets, always visible) */}
                 {leftBottomSection && (
                   <div style={{ flexShrink: 0 }}>

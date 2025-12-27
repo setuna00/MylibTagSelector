@@ -21,6 +21,7 @@ export function EditingModeToggle() {
         fontSize: '12px',
         padding: '4px 8px',
         minWidth: 'auto',
+        border: isEditing ? undefined : '1px solid var(--mantine-color-gray-4)',
       }}
     >
       {isEditing

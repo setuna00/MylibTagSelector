@@ -11,14 +11,14 @@ body {
   color: var(--mantine-color-text);
 }
 
-/* Tag badge 统一放大 30% */
+/* Tag badge 统一放大 4% (原放大 30%，现调整为 80% 即 1.3 * 0.8 = 1.04) */
 .tag-badge {
-  /* 读取 Mantine Badge size="lg" 的默认值并放大 30% */
+  /* 读取 Mantine Badge size="lg" 的默认值并放大 4% */
   /* Mantine v7 Badge lg 默认值：font-size: 0.875rem, height: 1.875rem, padding-x: 0.75rem */
-  font-size: calc(0.875rem * 1.3); /* 约 1.1375rem (18.2px) */
-  height: calc(1.875rem * 1.3); /* 约 2.4375rem (39px) */
-  padding-inline: calc(0.75rem * 1.3); /* 约 0.975rem (15.6px) */
+  font-size: calc(0.875rem * 1.04); /* 约 0.91rem (14.56px) */
+  height: calc(1.875rem * 1.04); /* 约 1.95rem (31.2px) */
+  padding-inline: calc(0.75rem * 1.04); /* 约 0.78rem (12.48px) */
   /* 保持 padding-y 不变，让 Mantine 控制垂直对齐 */
   /* 确保 line-height 匹配，避免文字垂直偏移 */
-  line-height: calc(1.875rem * 1.3);
+  line-height: calc(1.875rem * 1.04);
 }

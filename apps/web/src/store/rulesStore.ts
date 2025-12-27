@@ -21,6 +21,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { NodeId, TaxonomyIndex } from '@tagselector/tag-core';
+import { info as loggerInfo, devWarn as loggerDevWarn } from '../utils/logger';
 
 // ============================================================================
 // Types
@@ -820,7 +821,7 @@ export const useRulesStore = create<RulesState & RulesActions>()(
           let newTargets = rule.targetTagIds;
 
           if (newTrigger !== null && !index.byId.has(newTrigger)) {
-            console.warn(
+            loggerDevWarn(
               `[RulesStore] Rule "${rule.name}": trigger "${newTrigger}" not found in index, clearing.`
             );
             newTrigger = null;
@@ -830,7 +831,7 @@ export const useRulesStore = create<RulesState & RulesActions>()(
           const validTargets = newTargets.filter((t) => index.byId.has(t));
           if (validTargets.length !== newTargets.length) {
             const removed = newTargets.filter((t) => !index.byId.has(t));
-            console.warn(
+            loggerDevWarn(
               `[RulesStore] Rule "${rule.name}": removed ${removed.length} invalid targets: ${removed.join(', ')}`
             );
             newTargets = validTargets;
@@ -881,7 +882,7 @@ export const useRulesStore = create<RulesState & RulesActions>()(
         if (version < 2) {
           // Old format had `rules` instead of `savedRules`
           if (state.rules && Array.isArray(state.rules)) {
-            console.log('[RulesStore] Migrating from old format (rules) to new format (savedRules)');
+            loggerInfo('[RulesStore] Migrating from old format (rules) to new format (savedRules)');
             return {
               savedRules: state.rules,
             };
